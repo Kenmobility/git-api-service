@@ -6,10 +6,11 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"net/url"
 	"time"
+
+	"github.com/rs/zerolog/log"
 )
 
 var DefaultHTTPClient = &http.Client{
@@ -64,7 +65,7 @@ func makeRequest(req *http.Request) (*http.Response, error) {
 
 	resp, err = DefaultHTTPClient.Do(req)
 	if err != nil {
-		log.Println("Failed to do request", " url: ", url, ", method: ", req.Method, ", err: ", err)
+		log.Info().Msgf("Failed to do request; url: %s method: %s, err: %v", url, req.Method, err)
 
 		if errors.Is(err, context.DeadlineExceeded) {
 			return resp, fmt.Errorf("dal: %w", err)
@@ -73,7 +74,7 @@ func makeRequest(req *http.Request) (*http.Response, error) {
 		return resp, err
 	}
 
-	log.Println("-------------url: ", url, ", method: ", req.Method, ", resp time: -------------", time.Since(start).String())
+	log.Info().Msgf("-------------url: %s, method: %s, resp time: %s", url, req.Method, time.Since(start).String())
 
 	if 200 <= resp.StatusCode && resp.StatusCode <= 299 {
 		body, err := io.ReadAll(resp.Body)

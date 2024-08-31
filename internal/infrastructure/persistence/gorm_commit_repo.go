@@ -3,11 +3,11 @@ package persistence
 import (
 	"context"
 	"fmt"
-	"log"
 
 	"github.com/kenmobility/github-api-service/internal/domains/models"
 	"github.com/kenmobility/github-api-service/internal/domains/services"
 	"github.com/kenmobility/github-api-service/internal/dtos"
+	"github.com/rs/zerolog/log"
 	"gorm.io/gorm"
 )
 
@@ -27,6 +27,16 @@ func (gc *GormCommitRepository) SaveCommit(ctx context.Context, commit models.Co
 	return &commit, err
 }
 
+// SaveCommit stores a repository commit into the database
+func (gc *GormCommitRepository) SaveCommits(ctx context.Context, commits []models.Commit) error {
+	var dbCommits []Commit
+
+	for _, commit := range commits {
+		dbCommits = append(dbCommits, *FromDomainCommit(&commit))
+	}
+	return gc.DB.WithContext(ctx).Create(&dbCommits).Error
+}
+
 // GetAllCommitsByRepositoryName fetches all stores commits by repository name
 func (gc *GormCommitRepository) AllCommitsByRepository(ctx context.Context, repo models.RepoMetadata, query dtos.APIPagingDto) (*dtos.AllCommitsResponse, error) {
 	var dbCommits []Commit
@@ -35,7 +45,7 @@ func (gc *GormCommitRepository) AllCommitsByRepository(ctx context.Context, repo
 
 	queryInfo, offset := getPaginationInfo(query)
 
-	db := gc.DB.WithContext(ctx).Model(&Commit{}).Where(&Commit{RepoName: repo.Name})
+	db := gc.DB.WithContext(ctx).Model(&Commit{}).Where(&Commit{RepositoryName: repo.Name})
 
 	db.Count(&count)
 
@@ -45,7 +55,8 @@ func (gc *GormCommitRepository) AllCommitsByRepository(ctx context.Context, repo
 	db.Count(&queryCount)
 
 	if db.Error != nil {
-		log.Println("fetch commits error", db.Error.Error())
+		log.Info().Msgf("fetch commits error %v", db.Error.Error())
+
 		return nil, db.Error
 	}
 
@@ -62,7 +73,7 @@ func (gc *GormCommitRepository) TopCommitAuthorsByRepository(ctx context.Context
 	var authors []string
 	err := gc.DB.WithContext(ctx).Model(&models.Commit{}).
 		Select("author").
-		Where("repo_name = ?", repo.Name).
+		Where("repository_name = ?", repo.Name).
 		Group("author").
 		Order("count(author) DESC").
 		Limit(limit).
@@ -85,7 +96,7 @@ func commitResponse(commits []Commit) []models.Commit {
 			Author:         c.Author,
 			Date:           c.Date,
 			URL:            c.URL,
-			RepositoryName: c.RepoName,
+			RepositoryName: c.RepositoryName,
 			CreatedAt:      c.CreatedAt,
 			UpdatedAt:      c.UpdatedAt,
 		}

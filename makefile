@@ -7,9 +7,6 @@ createdb:
 dropdb:
 	docker exec -it github-api-hex-db-con dropdb github_api_db
 
-migrate: 
-	go run db/migration/migrate.go
-
 test:
 	go test -v ./...
 

@@ -38,7 +38,11 @@ func (rh RepositoryHandlers) AddRepository(ctx *gin.Context) {
 
 	repo, err := rh.gitRepositoryUsecase.AddRepository(ctx, input)
 	if err != nil {
-		response.Failure(ctx, http.StatusInternalServerError, err.Error(), err)
+		if err == message.ErrRepoAlreadyAdded {
+			response.Failure(ctx, http.StatusBadRequest, err.Error(), err.Error())
+			return
+		}
+		response.Failure(ctx, http.StatusInternalServerError, err.Error(), err.Error())
 		return
 	}
 
@@ -53,4 +57,24 @@ func (rh RepositoryHandlers) FetchAllRepositories(ctx *gin.Context) {
 	}
 
 	response.Success(ctx, http.StatusOK, "successfully fetched all repos", repos)
+}
+
+func (rh RepositoryHandlers) FetchRepository(ctx *gin.Context) {
+	repositoryId := ctx.Param("repoId")
+	if repositoryId == "" {
+		response.Failure(ctx, http.StatusBadRequest, "repoId is required", nil)
+		return
+	}
+
+	repo, err := rh.gitRepositoryUsecase.GetRepositoryById(ctx, repositoryId)
+	if err != nil {
+		if err == message.ErrNoRecordFound {
+			response.Failure(ctx, http.StatusBadRequest, message.ErrInvalidRepositoryId.Error(), message.ErrInvalidRepositoryId.Error())
+			return
+		}
+		response.Failure(ctx, http.StatusInternalServerError, err.Error(), err.Error())
+		return
+	}
+
+	response.Success(ctx, http.StatusOK, "successfully fetched repo", repo)
 }

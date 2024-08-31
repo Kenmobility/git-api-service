@@ -8,4 +8,5 @@ import (
 func RepositoryRoutes(r *gin.Engine, rh *handlers.RepositoryHandlers) {
 	r.POST("/repository", rh.AddRepository)
 	r.GET("/repositories", rh.FetchAllRepositories)
+	r.GET("/repository/:repoId", rh.FetchRepository)
 }

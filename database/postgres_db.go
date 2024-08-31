@@ -2,11 +2,11 @@ package database
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/kenmobility/github-api-service/common/helpers"
 	"github.com/kenmobility/github-api-service/config"
 	"github.com/kenmobility/github-api-service/internal/infrastructure/persistence"
+	"github.com/rs/zerolog/log"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -48,7 +48,8 @@ func NewPostgresDatabase(config config.Config) Database {
 func (p *PostgresDatabase) ConnectDb() (*gorm.DB, error) {
 	db, err := gorm.Open(postgres.Open(p.DSN), &gorm.Config{})
 	if err != nil {
-		log.Printf("failed to connect to postgres database: %v", err)
+		log.Info().Msgf("failed to connect to postgres database: %v", err)
+
 		return nil, err
 	}
 	return db, nil

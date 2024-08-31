@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -14,6 +13,7 @@ import (
 	"github.com/kenmobility/github-api-service/common/client"
 	"github.com/kenmobility/github-api-service/internal/domains/models"
 	"github.com/kenmobility/github-api-service/internal/domains/services"
+	"github.com/rs/zerolog/log"
 )
 
 type GitHubClient struct {
@@ -70,7 +70,7 @@ func (g *GitHubClient) FetchRepoMetadata(ctx context.Context, repositoryName str
 	var gitHubRepoResponse GitHubRepoMetadataResponse
 
 	if err := json.Unmarshal([]byte(resp.Body), &gitHubRepoResponse); err != nil {
-		fmt.Printf("marshal error, [%v]", err)
+		log.Error().Msgf("marshal error, [%v]", err)
 		return nil, errors.New("could not unmarshal repo metadata response")
 	}
 
@@ -88,92 +88,71 @@ func (g *GitHubClient) FetchRepoMetadata(ctx context.Context, repositoryName str
 	return repoMetadata, nil
 }
 
-func (g *GitHubClient) FetchCommits(ctx context.Context, repoName string, since time.Time, until time.Time) ([]models.Commit, error) {
-	var result []models.Commit
+func (g *GitHubClient) FetchCommits(ctx context.Context, repo models.RepoMetadata, since time.Time, until time.Time, lastFetchedCommit string) ([]models.Commit, error) {
+	var cc []models.Commit
+	var endpoint string
 
-	endpoint := fmt.Sprintf("%s/repos/%s/commits?since=%s&until=%s", g.baseURL, repoName, since.Format(time.RFC3339), until.Format(time.RFC3339))
+	if lastFetchedCommit != "" {
+		endpoint = fmt.Sprintf("%s/repos/%s/commits?sha=%s", g.baseURL, repo.Name, lastFetchedCommit)
+	} else {
+		endpoint = fmt.Sprintf("%s/repos/%s/commits?since=%s&until=%s", g.baseURL, repo.Name, since.Format(time.RFC3339), until.Format(time.RFC3339))
+	}
 	for endpoint != "" {
-
 		commitRes, nextURL, err := g.fetchCommitsPage(endpoint)
 		if err != nil {
 			return nil, err
 		}
 
-		for _, c := range commitRes {
-			result = append(result, models.Commit{
-				CommitID:       c.SHA,
-				Message:        c.Commit.Message,
-				Author:         c.Commit.Author.Name,
-				Date:           c.Commit.Author.Date,
-				URL:            c.HtmlURL,
-				RepositoryName: repoName,
-			})
-		}
-		/*
-			for _, commit := range result {
-				commit.RepositoryName = repo.Name
-
-				_, err := g.commitRepository.SaveCommit(ctx, commit)
-				if err != nil {
-					log.Printf("Error saving commit id-%s: %v\n", commit.CommitID, err)
-				}
+		for _, cr := range commitRes {
+			commit := models.Commit{
+				CommitID:       cr.SHA,
+				Message:        cr.Commit.Message,
+				Author:         cr.Commit.Author.Name,
+				Date:           cr.Commit.Author.Date,
+				URL:            cr.HtmlURL,
+				RepositoryName: repo.Name,
 			}
-		*/
+
+			cc = append(cc, commit)
+
+			sc, err := g.commitRepository.SaveCommit(ctx, commit)
+			if err != nil {
+				log.Error().Msgf("Error saving commitId-%s: %v\n", commit.CommitID, err)
+				continue
+			}
+			lastFetchedCommit = sc.CommitID
+		}
+
+		repo.LastFetchedCommit = lastFetchedCommit
+		_, err = g.gitRepoMetadataRepository.UpdateRepoMetadata(ctx, repo)
+		if err != nil {
+			log.Error().Msgf("Error updating repository %s: %v", repo.Name, err)
+			continue
+		}
 		endpoint = nextURL
 	}
 
-	return result, nil
+	return cc, nil
 }
-
-/*
-func (g GitHubClient) StartTracking(ctx context.Context, fetchInterval time.Duration) error {
-	for {
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		default:
-			g.runRepositoryTracker(ctx)
-			time.Sleep(fetchInterval)
-		}
-	}
-}
-
-
-func (g GitHubClient) runRepositoryTracker(ctx context.Context) {
-
-	trackedRepo, err := g.repositoryRepository.TrackedRepository(ctx)
-	if err != nil {
-		log.Printf("Error fetching tracked repository: %v", err)
-		return
-	}
-
-	if trackedRepo == nil {
-		log.Println("no repository set to track")
-		return
-	}
-	fmt.Printf("********Github repository tracking started for repo %s************\n",
-		trackedRepo.Name)
-	g.FetchAndSaveCommits(ctx, *trackedRepo, trackedRepo.StartDate, trackedRepo.EndDate)
-}
-*/
 
 func (g *GitHubClient) fetchCommitsPage(url string) ([]GithubCommitResponse, string, error) {
 
 	response, err := g.client.Get(url, map[string]string{}, g.getHeaders())
 	if err != nil {
-		log.Println("error fetching commits: ", err)
+		log.Error().Msgf("error fetching commits: %v", err)
+
 		return nil, "", err
 	}
 
 	if response.StatusCode == http.StatusForbidden {
-		return nil, "", fmt.Errorf("*************rate limit exceeded*************")
+		return nil, "", fmt.Errorf("rate limit exceeded")
 	}
 
 	g.updateRateLimitHeaders(response)
 
 	if g.rateLimitFields.rateLimitRemaining == 0 {
 		waitTime := time.Until(time.Unix(g.rateLimitFields.rateLimitReset, 0))
-		log.Printf("Rate limit exceeded. Waiting for %v until reset...", waitTime)
+		log.Info().Msgf("Rate limit exceeded. Waiting for %v until reset...", waitTime)
 	}
 
 	if response.StatusCode != http.StatusOK {
@@ -226,6 +205,7 @@ func (api *GitHubClient) updateRateLimitHeaders(resp *client.Response) {
 
 	if len(remaining) > 0 {
 		api.rateLimitFields.rateLimitRemaining, _ = strconv.Atoi(remaining[0])
+		log.Info().Msgf("Rate limit remaining: %d", api.rateLimitFields.rateLimitRemaining)
 	}
 
 	reset := resp.Headers["X-Ratelimit-Reset"]
@@ -236,6 +216,6 @@ func (api *GitHubClient) updateRateLimitHeaders(resp *client.Response) {
 	used := resp.Headers["X-Ratelimit-Used"]
 	if len(used) > 0 {
 		usedInt, _ := strconv.Atoi(used[0])
-		log.Printf("Rate limit used: %d/%d", usedInt, api.rateLimitFields.rateLimitLimit)
+		log.Info().Msgf("Rate limit used: %d/%d", usedInt, api.rateLimitFields.rateLimitLimit)
 	}
 }

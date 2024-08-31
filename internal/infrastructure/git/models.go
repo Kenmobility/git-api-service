@@ -26,7 +26,7 @@ type (
 
 type (
 	GitHubRepoMetadataResponse struct {
-		Id          string `json:"id"`
+		Id          int    `json:"id"`
 		Name        string `json:"name"`
 		FullName    string `json:"full_name"`
 		HtmlUrl     string `json:"html_url"`

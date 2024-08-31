@@ -1,12 +1,12 @@
 package config
 
 import (
-	"log"
 	"os"
 	"time"
 
 	"github.com/joho/godotenv"
 	"github.com/kenmobility/github-api-service/common/helpers"
+	"github.com/rs/zerolog/log"
 	"gopkg.in/go-playground/validator.v9"
 )
 
@@ -34,7 +34,7 @@ func LoadConfig(path string) (*Config, error) {
 		path = ".env"
 	}
 	if err := godotenv.Load(path); err != nil {
-		log.Println("env config error: ", err)
+		log.Info().Msgf("env config error: %v", err)
 		return nil, err
 	}
 
@@ -45,7 +45,7 @@ func LoadConfig(path string) (*Config, error) {
 
 	intervalDuration, err := time.ParseDuration(interval)
 	if err != nil {
-		log.Printf("Invalid FETCH_INTERVAL :[%s] env format: %v", interval, err)
+		log.Info().Msgf("Invalid FETCH_INTERVAL :[%s] env format: %v", interval, err)
 		return nil, err
 	}
 
@@ -58,7 +58,7 @@ func LoadConfig(path string) (*Config, error) {
 	} else {
 		sDate, err = time.Parse(time.RFC3339, startDate)
 		if err != nil {
-			log.Printf("Invalid DEFAULT_START_DATE [%s] env format: %v", startDate, err)
+			log.Info().Msgf("Invalid DEFAULT_START_DATE [%s] env format: %v", startDate, err)
 			return nil, err
 		}
 	}
@@ -69,7 +69,7 @@ func LoadConfig(path string) (*Config, error) {
 	} else {
 		eDate, err = time.Parse(time.RFC3339, endDate)
 		if err != nil {
-			log.Printf("Invalid DEFAULT_END_DATE [%s] env format: %v", endDate, err)
+			log.Info().Msgf("Invalid DEFAULT_END_DATE [%s] env format: %v", endDate, err)
 			return nil, err
 		}
 	}
@@ -86,15 +86,15 @@ func LoadConfig(path string) (*Config, error) {
 		DefaultStartDate:  sDate,
 		DefaultEndDate:    eDate,
 		GitHubApiBaseURL:  os.Getenv("GITHUB_API_BASE_URL"),
-		Address:           helpers.Getenv("ADDRESS", "localhost"),
-		Port:              helpers.Getenv("PORT", ":5000"),
+		Address:           helpers.Getenv("ADDRESS", "127.0.0.1"),
+		Port:              helpers.Getenv("PORT", "5000"),
 		DefaultRepository: helpers.Getenv("DEFAULT_REPOSITORY", "chromium/chromium"),
 	}
 
 	validate := validator.New()
 	err = validate.Struct(configVar)
 	if err != nil {
-		log.Printf("env validation error: %s", err.Error())
+		log.Info().Msgf("env validation error: %s", err.Error())
 		return nil, err
 	}
 

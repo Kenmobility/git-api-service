@@ -9,5 +9,5 @@ import (
 
 type GitManagerClient interface {
 	FetchRepoMetadata(ctx context.Context, repositoryName string) (*models.RepoMetadata, error)
-	FetchCommits(ctx context.Context, repoName string, since time.Time, until time.Time) ([]models.Commit, error)
+	FetchCommits(ctx context.Context, repo models.RepoMetadata, since time.Time, until time.Time, lastFetchedCommit string) ([]models.Commit, error)
 }

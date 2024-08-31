@@ -3,57 +3,66 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
 	"net/http"
+	"os"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
+	"github.com/kenmobility/github-api-service/common/message"
 	"github.com/kenmobility/github-api-service/config"
 	"github.com/kenmobility/github-api-service/database"
-	"github.com/kenmobility/github-api-service/internal/domains/models"
-	"github.com/kenmobility/github-api-service/internal/domains/services"
+	"github.com/kenmobility/github-api-service/internal/dtos"
 	"github.com/kenmobility/github-api-service/internal/handlers"
 	"github.com/kenmobility/github-api-service/internal/infrastructure/git"
 	"github.com/kenmobility/github-api-service/internal/infrastructure/persistence"
 	"github.com/kenmobility/github-api-service/internal/routes"
 	"github.com/kenmobility/github-api-service/internal/usecases"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 )
 
 func main() {
+	// Configures system wide Logger object
+	log.Logger = zerolog.New(os.Stderr).With().Timestamp().Caller().Logger()
+
+	// make it human-readable, only locally
+	if os.Getenv("APP_ENV") == "" {
+		log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr}).With().Caller().Logger()
+	}
+
 	// load env variables
 	config, err := config.LoadConfig("")
 	if err != nil {
-		log.Fatalf("failed to load config: %v", err)
+		log.Fatal().Msgf("failed to load config %v, (%v)", err.Error(), err.Error())
 	}
 
-	// establish database connection
 	dbClient := database.NewPostgresDatabase(*config)
 
+	// establish database connection
 	db, err := dbClient.ConnectDb()
 	if err != nil {
-		log.Fatalf("failed to establish postgres database connection: %v", err)
+		log.Fatal().Msgf("failed to establish postgres database connection: %v, (%v)", err.Error(), err.Error())
 	}
 
 	// Run migrations
 	if err := dbClient.Migrate(db); err != nil {
-		log.Fatalf("failed to run migrations: %v", err)
+		log.Fatal().Msgf("failed to run database migrations: %v, (%v)", err.Error(), err.Error())
 	}
 
 	// Initialize repositories
-	commitRepo := persistence.NewGormCommitRepository(db)
-	repoMetadataRepo := persistence.NewGormRepositoRepository(db)
+	commitRepository := persistence.NewGormCommitRepository(db)
+	repoMetadataRepository := persistence.NewGormRepoMetadataRepository(db)
 
-	// seed and set 'chromium/chromium' repo as default repository to track
-	err = seedDefaultRepository(config, repoMetadataRepo)
-	if err != nil {
-		log.Fatalf("failed to seed default repository to database: %v", err)
-	}
-
-	gitClient := git.NewGitHubClient(config.GitHubApiBaseURL, config.GitHubToken, config.FetchInterval, commitRepo, repoMetadataRepo)
+	gitClient := git.NewGitHubClient(config.GitHubApiBaseURL, config.GitHubToken, config.FetchInterval, commitRepository, repoMetadataRepository)
 
 	// Initialize use cases and handlers
-	gitCommitUsecase := usecases.NewManageGitCommitUsecase(commitRepo, repoMetadataRepo)
-	gitRepositoryUsecase := usecases.NewGitRepositoryUsecase(repoMetadataRepo, commitRepo, gitClient, *config)
+	gitCommitUsecase := usecases.NewManageGitCommitUsecase(commitRepository, repoMetadataRepository)
+	gitRepositoryUsecase := usecases.NewGitRepositoryUsecase(repoMetadataRepository, commitRepository, gitClient, *config)
+
+	// seed and set 'chromium/chromium' repo as default repository if not seeded
+	err = seedDefaultRepository(config, gitRepositoryUsecase)
+	if err != nil && err != message.ErrRepoAlreadyAdded {
+		log.Fatal().Msgf("failed to seed default repository: %v, (%v)", err.Error(), err.Error())
+	}
 
 	// Initialize handlers
 	commitHandler := handlers.NewCommitHandler(gitCommitUsecase)
@@ -70,43 +79,32 @@ func main() {
 		Handler: ginEngine,
 	}
 
-	// start web server
-	go func() {
-		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("listen: %v\n", err)
-		}
-		log.Printf("GitHub Service is listening on address %s", server.Addr)
-	}()
-
-	// create a context with cancellation to gracefully shut down GitHub tracker service if server shuts down
+	// create a context with cancellation to gracefully shut down Git commits monitoring if server shuts down
 	ctx, cancelFunc := context.WithCancel(context.Background())
 	defer cancelFunc()
-	if err := server.Shutdown(ctx); err != nil {
-		log.Fatalf("Server Shutdown: err=%v", err)
+
+	// Resume repo commits fetching for all repositories
+	go gitRepositoryUsecase.ResumeFetching(ctx)
+
+	// start web server
+	if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		log.Fatal().Msgf("listen: %v, (%v)\n", err.Error(), err.Error())
 	}
+	log.Info().Msgf("Git API Service is listening on address %s", server.Addr)
 }
 
 // SeedRepository seeds a default chromium repo and set it as tracking
-func seedDefaultRepository(config *config.Config, repoRepo services.RepoMetadataRepository) error {
-	defaultRepo := models.RepoMetadata{
-		PublicID: uuid.New().String(),
-		Name:     config.DefaultRepository,
-		URL:      "https://github.com/chromium/chromium",
-		Language: "C++",
+func seedDefaultRepository(config *config.Config, repositoryUsecase usecases.GitRepositoryUsecase) error {
+	defaultRepo := dtos.AddRepositoryRequestDto{
+		Name: config.DefaultRepository,
 	}
-
-	_, err := repoRepo.RepoMetadataByName(context.Background(), defaultRepo.Name)
-	if err != nil {
-		log.Printf("Repository %s already exists in the database, skipping seeding.", defaultRepo.Name)
+	repo, err := repositoryUsecase.AddRepository(context.Background(), defaultRepo)
+	if err != nil && err != message.ErrNoRecordFound {
 		return err
 	}
 
-	_, err = repoRepo.SaveRepoMetadata(context.Background(), defaultRepo)
-	if err != nil {
-		log.Printf("failed to see default repository: %v", err)
-		return err
+	if repo != nil {
+		log.Info().Msgf("Successfully seeded default repository: %s", repo.Name)
 	}
-
-	log.Printf("Successfully seeded default repository: %s", defaultRepo.Name)
 	return err
 }

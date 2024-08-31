@@ -1,16 +1,16 @@
-# GitHub API Service## Description
+# Git API Service# Description
 
-This service fetches data from GitHub's public APIs to retrieve repository commits, saves the data in a persistent store, and continuously monitors the repository for changes at a set interval.
+This service fetches data from Git APIs to retrieve repository commits, saves the data in a persistent store, and continuously monitors the repositories for changes at a set interval.
 
 ## Requirements- Golang 1.20+
 - PostgreSQL
 
 ## 1. Clone the repository, cd into the project folder and download required go dependencies
 ```bash
-git clone https://github.com/kenmobility/github-api-service.git
+git clone https://github.com/kenmobility/git-api-service.git
 ```
 ```bash
-cd github-api-hex
+cd git-api-service
 ```
 ```bash
 go mod tidy
@@ -70,19 +70,19 @@ make server
 ``` 
 curl -d '{"name": "GoogleChrome/chromium-dashboard"}'\
   -H "Content-Type: application/json" \
-  -X POST http://localhost:5000/repository \
+  -X POST http://127.0.0.1:5000/repository \
 ```
 
 - GET Request to fetch all the repositories on the database
 ```
 curl -L \
-  -X GET http://localhost:5000/repositories \
+  -X GET http://127.0.0.1:5000/repositories \
 ```
 
 - GET Request to fetch all the commits fetched from github API for any repo using repository Id 
 ```
 curl \
-  -X GET http://localhost:5000/commits/5846c0f0-81f5-45e3-9d4a-cfc6fe4f176a \
+  -X GET http://127.0.0.1:5000/repos/5846c0f0-81f5-45e3-9d4a-cfc6fe4f176a/commits \
 ```
 
 - GET Request to get repository metadata using repository id. 
@@ -94,6 +94,6 @@ curl -L \
 - GET Request to fetch N (as limit) top commit authors of the any added repository using its repository id with limit as query param
 ```
 curl -L \
-  -X GET http://localhost:5000/top-authors/5846c0f0-81f5-45e3-9d4a-cfc6fe4f176a?limit=5 \
+  -X GET http://localhost:5000/repos/5846c0f0-81f5-45e3-9d4a-cfc6fe4f176a/top-authors?limit=5 \
 ```
   

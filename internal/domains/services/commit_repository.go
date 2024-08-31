@@ -9,6 +9,7 @@ import (
 
 type CommitRepository interface {
 	SaveCommit(ctx context.Context, commit models.Commit) (*models.Commit, error)
+	SaveCommits(ctx context.Context, commits []models.Commit) error
 	AllCommitsByRepository(ctx context.Context, repoMetadata models.RepoMetadata, query dtos.APIPagingDto) (*dtos.AllCommitsResponse, error)
 	TopCommitAuthorsByRepository(ctx context.Context, repo models.RepoMetadata, limit int) ([]string, error)
 }
