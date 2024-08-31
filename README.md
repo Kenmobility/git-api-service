@@ -33,8 +33,12 @@ cp .env.example .env
 ## 4 Open Docker desktop application
 - Ensure that docker desktop is started and running on your machine 
 
-## 5. Attempt Removal of postgres container by name
-- run 'docker rm github-api-hex-db-con' to ensure that the container name for postgreSQL does not exist already
+## 5. Attempt to stop and remove postgreSQL container by name
+- run 'docker stop github-api-hex-db-con' to attempt stopping the container if it exists and running.
+```bash
+docker stop github-api-hex-db-con
+``` 
+- run 'docker rm github-api-hex-db-con' to try removal of the container if it exists to ensure that the container name for postgreSQL does not exist.
 ```bash
 docker rm github-api-hex-db-con
 ``` 
@@ -47,10 +51,6 @@ make postgres
 - run 'make createdb' to create a database
 ```bash
 make createdb
-```
-- run 'make migrate' to perform database migration
-```bash
-make migrate
 ```
 
 ## 7. Unit Testing
