@@ -3,9 +3,9 @@ package database
 import (
 	"fmt"
 
-	"github.com/kenmobility/github-api-service/common/helpers"
-	"github.com/kenmobility/github-api-service/config"
-	"github.com/kenmobility/github-api-service/internal/infrastructure/persistence"
+	"github.com/kenmobility/git-api-service/common/helpers"
+	"github.com/kenmobility/git-api-service/infra/config"
+	"github.com/kenmobility/git-api-service/internal/repository"
 	"github.com/rs/zerolog/log"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -57,5 +57,5 @@ func (p *PostgresDatabase) ConnectDb() (*gorm.DB, error) {
 
 func (p *PostgresDatabase) Migrate(db *gorm.DB) error {
 	// Migrate the schema for PostgreSQL
-	return db.AutoMigrate(&persistence.Repository{}, &persistence.Commit{})
+	return db.AutoMigrate(&repository.Repository{}, &repository.Commit{})
 }

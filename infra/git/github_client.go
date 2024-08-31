@@ -10,20 +10,19 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kenmobility/github-api-service/common/client"
-	"github.com/kenmobility/github-api-service/internal/domains/models"
-	"github.com/kenmobility/github-api-service/internal/domains/services"
+	"github.com/kenmobility/git-api-service/common/client"
+	"github.com/kenmobility/git-api-service/internal/domains"
 	"github.com/rs/zerolog/log"
 )
 
 type GitHubClient struct {
-	baseURL                   string
-	token                     string
-	fetchInterval             time.Duration
-	commitRepository          services.CommitRepository
-	gitRepoMetadataRepository services.RepoMetadataRepository
-	client                    *client.RestClient
-	rateLimitFields           rateLimitFields
+	baseURL       string
+	token         string
+	fetchInterval time.Duration
+	//commitRepository          usecases.CommitRepository
+	//gitRepoMetadataRepository usecases.RepoMetadataRepository
+	client          *client.RestClient
+	rateLimitFields rateLimitFields
 }
 
 type rateLimitFields struct {
@@ -39,23 +38,22 @@ func (g *GitHubClient) getHeaders() map[string]string {
 	}
 }
 
-func NewGitHubClient(baseUrl string, token string, fetchInterval time.Duration,
-	commitRepository services.CommitRepository, gitRepoMetadataRepository services.RepoMetadataRepository) GitManagerClient {
+func NewGitHubClient(baseUrl string, token string, fetchInterval time.Duration) GitManagerClient {
 	client := client.NewRestClient()
 
 	gc := GitHubClient{
-		baseURL:                   baseUrl,
-		token:                     token,
-		fetchInterval:             fetchInterval,
-		commitRepository:          commitRepository,
-		gitRepoMetadataRepository: gitRepoMetadataRepository,
-		client:                    client,
+		baseURL:       baseUrl,
+		token:         token,
+		fetchInterval: fetchInterval,
+		//commitRepository:          commitRepository,
+		//gitRepoMetadataRepository: gitRepoMetadataRepository,
+		client: client,
 	}
 	ts := GitManagerClient(&gc)
 	return ts
 }
 
-func (g *GitHubClient) FetchRepoMetadata(ctx context.Context, repositoryName string) (*models.RepoMetadata, error) {
+func (g *GitHubClient) FetchRepoMetadata(ctx context.Context, repositoryName string) (*domains.RepoMetadata, error) {
 	endpoint := fmt.Sprintf("%s/repos/%s", g.baseURL, repositoryName)
 
 	resp, err := g.client.Get(endpoint)
@@ -74,7 +72,7 @@ func (g *GitHubClient) FetchRepoMetadata(ctx context.Context, repositoryName str
 		return nil, errors.New("could not unmarshal repo metadata response")
 	}
 
-	repoMetadata := &models.RepoMetadata{
+	repoMetadata := &domains.RepoMetadata{
 		Name:            gitHubRepoResponse.FullName,
 		Description:     gitHubRepoResponse.Description,
 		URL:             gitHubRepoResponse.Url,
@@ -88,8 +86,8 @@ func (g *GitHubClient) FetchRepoMetadata(ctx context.Context, repositoryName str
 	return repoMetadata, nil
 }
 
-func (g *GitHubClient) FetchCommits(ctx context.Context, repo models.RepoMetadata, since time.Time, until time.Time, lastFetchedCommit string) ([]models.Commit, error) {
-	var cc []models.Commit
+func (g *GitHubClient) FetchCommits(ctx context.Context, repo domains.RepoMetadata, since time.Time, until time.Time, lastFetchedCommit string) ([]domains.Commit, error) {
+	var cc []domains.Commit
 	var endpoint string
 
 	if lastFetchedCommit != "" {
@@ -104,7 +102,7 @@ func (g *GitHubClient) FetchCommits(ctx context.Context, repo models.RepoMetadat
 		}
 
 		for _, cr := range commitRes {
-			commit := models.Commit{
+			commit := domains.Commit{
 				CommitID:       cr.SHA,
 				Message:        cr.Commit.Message,
 				Author:         cr.Commit.Author.Name,
@@ -115,20 +113,24 @@ func (g *GitHubClient) FetchCommits(ctx context.Context, repo models.RepoMetadat
 
 			cc = append(cc, commit)
 
-			sc, err := g.commitRepository.SaveCommit(ctx, commit)
-			if err != nil {
-				log.Error().Msgf("Error saving commitId-%s: %v\n", commit.CommitID, err)
-				continue
-			}
-			lastFetchedCommit = sc.CommitID
+			/*
+				sc, err := g.commitRepository.SaveCommit(ctx, commit)
+				if err != nil {
+					log.Error().Msgf("Error saving commitId-%s: %v\n", commit.CommitID, err)
+					continue
+				}
+				lastFetchedCommit = sc.CommitID
+			*/
 		}
 
-		repo.LastFetchedCommit = lastFetchedCommit
-		_, err = g.gitRepoMetadataRepository.UpdateRepoMetadata(ctx, repo)
-		if err != nil {
-			log.Error().Msgf("Error updating repository %s: %v", repo.Name, err)
-			continue
-		}
+		/*
+			repo.LastFetchedCommit = lastFetchedCommit
+			_, err = g.gitRepoMetadataRepository.UpdateRepoMetadata(ctx, repo)
+			if err != nil {
+				log.Error().Msgf("Error updating repository %s: %v", repo.Name, err)
+				continue
+			}
+		*/
 		endpoint = nextURL
 	}
 

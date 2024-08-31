@@ -1,6 +1,6 @@
-package persistence
+package repository
 
-import "github.com/kenmobility/github-api-service/internal/dtos"
+import "github.com/kenmobility/git-api-service/internal/http/dtos"
 
 const (
 	DEFAULTPAGE                  = 1

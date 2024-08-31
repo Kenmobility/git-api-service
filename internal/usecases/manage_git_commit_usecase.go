@@ -3,8 +3,8 @@ package usecases
 import (
 	"context"
 
-	"github.com/kenmobility/github-api-service/internal/domains/services"
-	"github.com/kenmobility/github-api-service/internal/dtos"
+	"github.com/kenmobility/git-api-service/internal/http/dtos"
+	"github.com/kenmobility/git-api-service/internal/repository"
 )
 
 type ManageGitCommitUsecase interface {
@@ -13,11 +13,11 @@ type ManageGitCommitUsecase interface {
 }
 
 type manageGitCommitUsecase struct {
-	commitRepository       services.CommitRepository
-	repoMetadataRepository services.RepoMetadataRepository
+	commitRepository       repository.CommitRepository
+	repoMetadataRepository repository.RepoMetadataRepository
 }
 
-func NewManageGitCommitUsecase(commitRepo services.CommitRepository, repoMetadataRepository services.RepoMetadataRepository) ManageGitCommitUsecase {
+func NewManageGitCommitUsecase(commitRepo repository.CommitRepository, repoMetadataRepository repository.RepoMetadataRepository) ManageGitCommitUsecase {
 	return &manageGitCommitUsecase{
 		commitRepository:       commitRepo,
 		repoMetadataRepository: repoMetadataRepository,

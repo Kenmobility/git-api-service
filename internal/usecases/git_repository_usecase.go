@@ -5,31 +5,31 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/kenmobility/github-api-service/common/helpers"
-	"github.com/kenmobility/github-api-service/common/message"
-	"github.com/kenmobility/github-api-service/config"
-	"github.com/kenmobility/github-api-service/internal/domains/models"
-	"github.com/kenmobility/github-api-service/internal/domains/services"
-	"github.com/kenmobility/github-api-service/internal/dtos"
-	"github.com/kenmobility/github-api-service/internal/infrastructure/git"
+	"github.com/kenmobility/git-api-service/common/helpers"
+	"github.com/kenmobility/git-api-service/common/message"
+	"github.com/kenmobility/git-api-service/infra/config"
+	"github.com/kenmobility/git-api-service/infra/git"
+	"github.com/kenmobility/git-api-service/internal/domains"
+	"github.com/kenmobility/git-api-service/internal/http/dtos"
+	"github.com/kenmobility/git-api-service/internal/repository"
 	"github.com/rs/zerolog/log"
 )
 
 type GitRepositoryUsecase interface {
-	AddRepository(ctx context.Context, input dtos.AddRepositoryRequestDto) (*models.RepoMetadata, error)
-	GetRepositoryById(ctx context.Context, repoId string) (*models.RepoMetadata, error)
-	GellAllRepositories(ctx context.Context) ([]models.RepoMetadata, error)
+	AddRepository(ctx context.Context, input dtos.AddRepositoryRequestDto) (*dtos.GitRepoMetadataResponseDto, error)
+	GetRepositoryById(ctx context.Context, repoId string) (*dtos.GitRepoMetadataResponseDto, error)
+	GellAllRepositories(ctx context.Context) ([]dtos.GitRepoMetadataResponseDto, error)
 	ResumeFetching(ctx context.Context) error
 }
 
 type gitRepoUsecase struct {
-	repoMetadataRepository services.RepoMetadataRepository
-	commitRepository       services.CommitRepository
+	repoMetadataRepository repository.RepoMetadataRepository
+	commitRepository       repository.CommitRepository
 	gitClient              git.GitManagerClient
 	config                 config.Config
 }
 
-func NewGitRepositoryUsecase(repoMetadataRepo services.RepoMetadataRepository, commitRepo services.CommitRepository,
+func NewGitRepositoryUsecase(repoMetadataRepo repository.RepoMetadataRepository, commitRepo repository.CommitRepository,
 	gitClient git.GitManagerClient, config config.Config) GitRepositoryUsecase {
 	return &gitRepoUsecase{
 		repoMetadataRepository: repoMetadataRepo,
@@ -39,15 +39,31 @@ func NewGitRepositoryUsecase(repoMetadataRepo services.RepoMetadataRepository, c
 	}
 }
 
-func (uc *gitRepoUsecase) GetRepositoryById(ctx context.Context, repoId string) (*models.RepoMetadata, error) {
-	return uc.repoMetadataRepository.RepoMetadataByPublicId(ctx, repoId)
+func (uc *gitRepoUsecase) GetRepositoryById(ctx context.Context, repoId string) (*dtos.GitRepoMetadataResponseDto, error) {
+	repo, err := uc.repoMetadataRepository.RepoMetadataByPublicId(ctx, repoId)
+	if err != nil {
+		return nil, err
+	}
+
+	repoDto := repo.ToDto()
+
+	return &repoDto, nil
 }
 
-func (uc *gitRepoUsecase) GellAllRepositories(ctx context.Context) ([]models.RepoMetadata, error) {
-	return uc.repoMetadataRepository.AllRepoMetadata(ctx)
+func (uc *gitRepoUsecase) GellAllRepositories(ctx context.Context) ([]dtos.GitRepoMetadataResponseDto, error) {
+	repos, err := uc.repoMetadataRepository.AllRepoMetadata(ctx)
+	if err != nil {
+		return nil, err
+	}
+	repoDtoResponse := make([]dtos.GitRepoMetadataResponseDto, 0, len(repos))
+	for _, repo := range repos {
+		repoDtoResponse = append(repoDtoResponse, repo.ToDto())
+	}
+
+	return repoDtoResponse, nil
 }
 
-func (uc *gitRepoUsecase) AddRepository(ctx context.Context, input dtos.AddRepositoryRequestDto) (*models.RepoMetadata, error) {
+func (uc *gitRepoUsecase) AddRepository(ctx context.Context, input dtos.AddRepositoryRequestDto) (*dtos.GitRepoMetadataResponseDto, error) {
 	//validate repository name to ensure it has owner and repo name
 	if !helpers.IsRepositoryNameValid(input.Name) {
 		return nil, message.ErrInvalidRepositoryName
@@ -82,31 +98,29 @@ func (uc *gitRepoUsecase) AddRepository(ctx context.Context, input dtos.AddRepos
 	// Start fetching commits for the new added repository in a new gorouting
 	go uc.startFetchingRepositoryCommits(ctx, *repoMetadata)
 
-	return sRepoMetadata, nil
+	repoDto := sRepoMetadata.ToDto()
+
+	return &repoDto, nil
 }
 
-func (uc *gitRepoUsecase) startFetchingRepositoryCommits(ctx context.Context, repo models.RepoMetadata) {
+func (uc *gitRepoUsecase) startFetchingRepositoryCommits(ctx context.Context, repo domains.RepoMetadata) {
 	ticker := time.NewTicker(uc.config.FetchInterval)
 	defer ticker.Stop()
 
-	for {
-		select {
-		case <-ticker.C:
-			// Fetch commits for the repository
-			commits, err := uc.gitClient.FetchCommits(ctx, repo, uc.config.DefaultStartDate, uc.config.DefaultEndDate, "")
+	for range ticker.C {
+		// Fetch commits for the repository
+		commits, err := uc.gitClient.FetchCommits(ctx, repo, uc.config.DefaultStartDate, uc.config.DefaultEndDate, "")
+		if err != nil {
+			log.Info().Msgf("Failed to fetch commits for repository %s: %v", repo.Name, err)
+			continue
+		}
+
+		// loop through commits and persist each
+		for _, commit := range commits {
+			_, err := uc.commitRepository.SaveCommit(ctx, commit)
 			if err != nil {
-				log.Info().Msgf("Failed to fetch commits for repository %s: %v", repo.Name, err)
-				continue
+				log.Info().Msgf("failed to save commitId - %s for repository %s: %v", commit.CommitID, repo.Name, err)
 			}
-
-			// loop through commits and persist each
-			for _, commit := range commits {
-				_, err := uc.commitRepository.SaveCommit(ctx, commit)
-				if err != nil {
-					log.Info().Msgf("failed to save commitId - %s for repository %s: %v", commit.CommitID, repo.Name, err)
-				}
-			}
-
 		}
 	}
 }
@@ -127,7 +141,7 @@ func (uc *gitRepoUsecase) ResumeFetching(ctx context.Context) error {
 	return nil
 }
 
-func (uc *gitRepoUsecase) startPeriodicFetching(ctx context.Context, repo models.RepoMetadata) error {
+func (uc *gitRepoUsecase) startPeriodicFetching(ctx context.Context, repo domains.RepoMetadata) error {
 	log.Info().Msgf("Commits periodic fetching started for repo %v", repo.Name)
 	ticker := time.NewTicker(uc.config.FetchInterval)
 	defer ticker.Stop()
@@ -145,7 +159,7 @@ func (uc *gitRepoUsecase) startPeriodicFetching(ctx context.Context, repo models
 	}
 }
 
-func (uc *gitRepoUsecase) fetchCommits(ctx context.Context, repo models.RepoMetadata) {
+func (uc *gitRepoUsecase) fetchCommits(ctx context.Context, repo domains.RepoMetadata) {
 	log.Info().Msgf("fetchcommits for repo: %s", repo.Name)
 
 	repo.IsFetching = true

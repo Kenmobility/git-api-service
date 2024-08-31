@@ -1,24 +1,23 @@
-package persistence
+package repository
 
 import (
 	"context"
 
-	"github.com/kenmobility/github-api-service/common/message"
-	"github.com/kenmobility/github-api-service/internal/domains/models"
-	"github.com/kenmobility/github-api-service/internal/domains/services"
+	"github.com/kenmobility/git-api-service/common/message"
+	"github.com/kenmobility/git-api-service/internal/domains"
 	"github.com/rs/zerolog/log"
 	"gorm.io/gorm"
 )
 
-type GormRepoMetadataRepository struct {
+type PostgresGitRepoMetadataRepository struct {
 	DB *gorm.DB
 }
 
-func NewGormRepoMetadataRepository(db *gorm.DB) services.RepoMetadataRepository {
-	return &GormRepoMetadataRepository{DB: db}
+func NewPostgresGitRepoMetadataRepository(db *gorm.DB) RepoMetadataRepository {
+	return &PostgresGitRepoMetadataRepository{DB: db}
 }
 
-func (r *GormRepoMetadataRepository) SaveRepoMetadata(ctx context.Context, repo models.RepoMetadata) (*models.RepoMetadata, error) {
+func (r *PostgresGitRepoMetadataRepository) SaveRepoMetadata(ctx context.Context, repo domains.RepoMetadata) (*domains.RepoMetadata, error) {
 
 	dbRepository := Repository{
 		PublicID:        repo.PublicID,
@@ -41,7 +40,7 @@ func (r *GormRepoMetadataRepository) SaveRepoMetadata(ctx context.Context, repo 
 	return dbRepository.ToDomain(), err
 }
 
-func (r *GormRepoMetadataRepository) RepoMetadataByPublicId(ctx context.Context, publicId string) (*models.RepoMetadata, error) {
+func (r *PostgresGitRepoMetadataRepository) RepoMetadataByPublicId(ctx context.Context, publicId string) (*domains.RepoMetadata, error) {
 	var repo Repository
 	err := r.DB.WithContext(ctx).Where("public_id = ?", publicId).Find(&repo).Error
 
@@ -51,7 +50,7 @@ func (r *GormRepoMetadataRepository) RepoMetadataByPublicId(ctx context.Context,
 	return repo.ToDomain(), err
 }
 
-func (r *GormRepoMetadataRepository) RepoMetadataByName(ctx context.Context, name string) (*models.RepoMetadata, error) {
+func (r *PostgresGitRepoMetadataRepository) RepoMetadataByName(ctx context.Context, name string) (*domains.RepoMetadata, error) {
 	var repo Repository
 	err := r.DB.WithContext(ctx).Where("name = ?", name).Find(&repo).Error
 	if repo.ID == 0 {
@@ -60,7 +59,7 @@ func (r *GormRepoMetadataRepository) RepoMetadataByName(ctx context.Context, nam
 	return repo.ToDomain(), err
 }
 
-func (r *GormRepoMetadataRepository) AllRepoMetadata(ctx context.Context) ([]models.RepoMetadata, error) {
+func (r *PostgresGitRepoMetadataRepository) AllRepoMetadata(ctx context.Context) ([]domains.RepoMetadata, error) {
 	var dbRepositories []Repository
 
 	err := r.DB.WithContext(ctx).Find(&dbRepositories).Error
@@ -69,7 +68,7 @@ func (r *GormRepoMetadataRepository) AllRepoMetadata(ctx context.Context) ([]mod
 		return nil, err
 	}
 
-	var repoMetaDataResponse []models.RepoMetadata
+	var repoMetaDataResponse []domains.RepoMetadata
 
 	for _, dbRepository := range dbRepositories {
 		repoMetaDataResponse = append(repoMetaDataResponse, *dbRepository.ToDomain())
@@ -77,7 +76,7 @@ func (r *GormRepoMetadataRepository) AllRepoMetadata(ctx context.Context) ([]mod
 	return repoMetaDataResponse, err
 }
 
-func (r *GormRepoMetadataRepository) UpdateRepoMetadata(ctx context.Context, repo models.RepoMetadata) (*models.RepoMetadata, error) {
+func (r *PostgresGitRepoMetadataRepository) UpdateRepoMetadata(ctx context.Context, repo domains.RepoMetadata) (*domains.RepoMetadata, error) {
 	dbRepo := FromDomainRepo(&repo)
 
 	err := r.DB.WithContext(ctx).Model(&Repository{}).Where(&Repository{PublicID: repo.PublicID}).Updates(&dbRepo).Error

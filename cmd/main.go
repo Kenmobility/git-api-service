@@ -7,15 +7,15 @@ import (
 	"os"
 
 	"github.com/gin-gonic/gin"
-	"github.com/kenmobility/github-api-service/common/message"
-	"github.com/kenmobility/github-api-service/config"
-	"github.com/kenmobility/github-api-service/database"
-	"github.com/kenmobility/github-api-service/internal/dtos"
-	"github.com/kenmobility/github-api-service/internal/handlers"
-	"github.com/kenmobility/github-api-service/internal/infrastructure/git"
-	"github.com/kenmobility/github-api-service/internal/infrastructure/persistence"
-	"github.com/kenmobility/github-api-service/internal/routes"
-	"github.com/kenmobility/github-api-service/internal/usecases"
+	"github.com/kenmobility/git-api-service/common/message"
+	"github.com/kenmobility/git-api-service/infra/config"
+	"github.com/kenmobility/git-api-service/infra/database"
+	"github.com/kenmobility/git-api-service/infra/git"
+	"github.com/kenmobility/git-api-service/internal/http/dtos"
+	"github.com/kenmobility/git-api-service/internal/http/handlers"
+	"github.com/kenmobility/git-api-service/internal/http/routes"
+	"github.com/kenmobility/git-api-service/internal/repository"
+	"github.com/kenmobility/git-api-service/internal/usecases"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
@@ -35,6 +35,7 @@ func main() {
 		log.Fatal().Msgf("failed to load config %v, (%v)", err.Error(), err.Error())
 	}
 
+	// Initialize Database Client
 	dbClient := database.NewPostgresDatabase(*config)
 
 	// establish database connection
@@ -49,10 +50,11 @@ func main() {
 	}
 
 	// Initialize repositories
-	commitRepository := persistence.NewGormCommitRepository(db)
-	repoMetadataRepository := persistence.NewGormRepoMetadataRepository(db)
+	commitRepository := repository.NewPostgresGitCommitRepository(db)
+	repoMetadataRepository := repository.NewPostgresGitRepoMetadataRepository(db)
 
-	gitClient := git.NewGitHubClient(config.GitHubApiBaseURL, config.GitHubToken, config.FetchInterval, commitRepository, repoMetadataRepository)
+	// Initialize Git Manager Client
+	gitClient := git.NewGitHubClient(config.GitHubApiBaseURL, config.GitHubToken, config.FetchInterval)
 
 	// Initialize use cases and handlers
 	gitCommitUsecase := usecases.NewManageGitCommitUsecase(commitRepository, repoMetadataRepository)

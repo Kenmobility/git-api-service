@@ -1,9 +1,9 @@
-package persistence
+package repository
 
 import (
 	"time"
 
-	"github.com/kenmobility/github-api-service/internal/domains/models"
+	"github.com/kenmobility/git-api-service/internal/domains"
 )
 
 // Commit represents the GORM model for the commits table.
@@ -19,9 +19,9 @@ type Commit struct {
 	UpdatedAt      time.Time
 }
 
-// ToDomain converts a PostgresCommit to a generic domain Commit.
-func (pc *Commit) ToDomain() *models.Commit {
-	return &models.Commit{
+// ToDomain converts a PostgresCommit to a generic domain entity Commit.
+func (pc *Commit) ToDomain() *domains.Commit {
+	return &domains.Commit{
 		CommitID:       pc.CommitID,
 		Message:        pc.Message,
 		Author:         pc.Author,
@@ -31,8 +31,8 @@ func (pc *Commit) ToDomain() *models.Commit {
 	}
 }
 
-// FromDomain creates a PostgresCommit from a generic domain Commit.
-func FromDomainCommit(c *models.Commit) *Commit {
+// FromDomain creates a PostgresCommit from a generic domain entity Commit.
+func FromDomainCommit(c *domains.Commit) *Commit {
 	return &Commit{
 		CommitID:       c.CommitID,
 		Message:        c.Message,

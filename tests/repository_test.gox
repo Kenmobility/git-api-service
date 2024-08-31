@@ -6,9 +6,9 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/kenmobility/github-api-service/common/helpers"
-	"github.com/kenmobility/github-api-service/internal/domain"
-	"github.com/kenmobility/github-api-service/internal/repositories"
+	"github.com/kenmobility/git-api-service/common/helpers"
+	"github.com/kenmobility/git-api-service/internal/domain"
+	"github.com/kenmobility/git-api-service/internal/repositories"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

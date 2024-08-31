@@ -1,4 +1,4 @@
-module github.com/kenmobility/github-api-service
+module github.com/kenmobility/git-api-service
 
 go 1.22.0
 

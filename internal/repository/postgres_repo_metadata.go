@@ -1,12 +1,12 @@
-package persistence
+package repository
 
 import (
-	"github.com/kenmobility/github-api-service/internal/domains/models"
-
 	"time"
+
+	"github.com/kenmobility/git-api-service/internal/domains"
 )
 
-// Repository represents the GORM model for the repositories table.
+// Repository represents the Postgres model for the repositories table.
 type Repository struct {
 	ID                uint   `gorm:"primarykey"`
 	PublicID          string `gorm:"type:varchar;uniqueIndex"`
@@ -25,8 +25,8 @@ type Repository struct {
 }
 
 // ToDomain converts a PostgresRepository to a generic domain entity RepoMetadata.
-func (pr *Repository) ToDomain() *models.RepoMetadata {
-	return &models.RepoMetadata{
+func (pr *Repository) ToDomain() *domains.RepoMetadata {
+	return &domains.RepoMetadata{
 		PublicID:          pr.PublicID,
 		Name:              pr.Name,
 		Description:       pr.Description,
@@ -44,7 +44,7 @@ func (pr *Repository) ToDomain() *models.RepoMetadata {
 }
 
 // FromDomain creates a PostgresRepository from a generic domain entity RepoMetadata.
-func FromDomainRepo(r *models.RepoMetadata) *Repository {
+func FromDomainRepo(r *domains.RepoMetadata) *Repository {
 	return &Repository{
 		PublicID:          r.PublicID,
 		Name:              r.Name,
