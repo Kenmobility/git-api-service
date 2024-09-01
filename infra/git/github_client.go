@@ -11,11 +11,9 @@ import (
 	"time"
 
 	"github.com/kenmobility/git-api-service/common/client"
-	"github.com/kenmobility/git-api-service/infra/logger"
 	"github.com/kenmobility/git-api-service/internal/domains"
+	"github.com/rs/zerolog/log"
 )
-
-var log = logger.New("git_client")
 
 type GitHubClient struct {
 	baseURL         string
@@ -26,7 +24,7 @@ type GitHubClient struct {
 }
 
 type rateLimitFields struct {
-	rateLimitLimit     int
+	rateLimitLimit     int64
 	rateLimitRemaining int
 	rateLimitReset     int64
 }
@@ -84,68 +82,24 @@ func (g *GitHubClient) FetchRepoMetadata(ctx context.Context, repositoryName str
 	return repoMetadata, nil
 }
 
-func (g *GitHubClient) FetchCommits(ctx context.Context, repo domains.RepoMetadata, since time.Time, until time.Time, lastFetchedCommit string) ([]domains.Commit, error) {
-	var cc []domains.Commit
+func (g *GitHubClient) FetchCommits(ctx context.Context, repo domains.RepoMetadata, since time.Time, until time.Time, lastFetchedCommit string, page, perPage int) ([]domains.Commit, bool, error) {
 	var endpoint string
 
 	if lastFetchedCommit != "" {
-		endpoint = fmt.Sprintf("%s/repos/%s/commits?sha=%s", g.baseURL, repo.Name, lastFetchedCommit)
+		endpoint = fmt.Sprintf("%s/repos/%s/commits?sha=%s&per_page=%d&page=%d", g.baseURL, repo.Name, lastFetchedCommit, perPage, page)
 	} else {
-		endpoint = fmt.Sprintf("%s/repos/%s/commits?since=%s&until=%s", g.baseURL, repo.Name, since.Format(time.RFC3339), until.Format(time.RFC3339))
-	}
-	for endpoint != "" {
-		commitRes, nextURL, err := g.fetchCommitsPage(endpoint)
-		if err != nil {
-			return nil, err
-		}
-
-		for _, cr := range commitRes {
-			commit := domains.Commit{
-				CommitID:       cr.SHA,
-				Message:        cr.Commit.Message,
-				Author:         cr.Commit.Author.Name,
-				Date:           cr.Commit.Author.Date,
-				URL:            cr.HtmlURL,
-				RepositoryName: repo.Name,
-			}
-
-			cc = append(cc, commit)
-
-			/*
-				sc, err := g.commitRepository.SaveCommit(ctx, commit)
-				if err != nil {
-					log.Error().Msgf("Error saving commitId-%s: %v\n", commit.CommitID, err)
-					continue
-				}
-				lastFetchedCommit = sc.CommitID
-			*/
-		}
-
-		/*
-			repo.LastFetchedCommit = lastFetchedCommit
-			_, err = g.gitRepoMetadataRepository.UpdateRepoMetadata(ctx, repo)
-			if err != nil {
-				log.Error().Msgf("Error updating repository %s: %v", repo.Name, err)
-				continue
-			}
-		*/
-		endpoint = nextURL
+		endpoint = fmt.Sprintf("%s/repos/%s/commits?since=%s&until=%s&per_page=%d&page=%d", g.baseURL, repo.Name, since.Format(time.RFC3339), until.Format(time.RFC3339), perPage, page)
 	}
 
-	return cc, nil
-}
-
-func (g *GitHubClient) fetchCommitsPage(url string) ([]GithubCommitResponse, string, error) {
-
-	response, err := g.client.Get(url, map[string]string{}, g.getHeaders())
+	response, err := g.client.Get(endpoint, map[string]string{}, g.getHeaders())
 	if err != nil {
 		log.Error().Msgf("error fetching commits: %v", err)
 
-		return nil, "", err
+		return nil, false, err
 	}
 
 	if response.StatusCode == http.StatusForbidden {
-		return nil, "", fmt.Errorf("rate limit exceeded")
+		return nil, false, fmt.Errorf("rate limit exceeded")
 	}
 
 	g.updateRateLimitHeaders(response)
@@ -156,26 +110,45 @@ func (g *GitHubClient) fetchCommitsPage(url string) ([]GithubCommitResponse, str
 	}
 
 	if response.StatusCode != http.StatusOK {
-		return nil, "", fmt.Errorf("failed to fetch commits; status code: %v", response.StatusCode)
+		return nil, false, fmt.Errorf("failed to fetch commits; status code: %v", response.StatusCode)
 	}
 
 	var commitRes []GithubCommitResponse
 
 	if err := json.Unmarshal([]byte(response.Body), &commitRes); err != nil {
 		fmt.Printf("marshal error, [%v]", err)
-		return nil, "", errors.New("could not unmarshal commits response")
+		return nil, false, errors.New("could not unmarshal commits response")
 	}
 
-	nextURL := g.parseNextURL(response.Headers["Link"])
+	var cc []domains.Commit
+	for _, cr := range commitRes {
+		commit := domains.Commit{
+			CommitID:       cr.SHA,
+			Message:        cr.Commit.Message,
+			Author:         cr.Commit.Author.Name,
+			Date:           cr.Commit.Author.Date,
+			URL:            cr.HtmlURL,
+			RepositoryName: repo.Name,
+		}
 
-	return commitRes, nextURL, nil
+		cc = append(cc, commit)
+	}
+
+	// Determine if more pages exist
+	morePages := false
+	linkHeader := response.Headers["Link"]
+	if len(linkHeader) > 0 {
+		morePages = g.hasNextPage(linkHeader[0])
+	}
+
+	return cc, morePages, nil
 }
 
+/*
 func (api *GitHubClient) parseNextURL(linkHeader []string) string {
 	if len(linkHeader) == 0 {
 		return ""
 	}
-
 	links := strings.Split(linkHeader[0], ",")
 	for _, link := range links {
 		parts := strings.Split(strings.TrimSpace(link), ";")
@@ -190,15 +163,37 @@ func (api *GitHubClient) parseNextURL(linkHeader []string) string {
 			return urlPart
 		}
 	}
-
 	return ""
+}
+*/
+
+// hasNextPage checks if there is a 'next' link in the Link header
+func (g *GitHubClient) hasNextPage(linkHeader string) bool {
+	links := g.parseLinkHeader(linkHeader)
+	_, hasNext := links["next"]
+	return hasNext
+}
+
+// parseLinkHeader parses the Link header into a map
+func (g *GitHubClient) parseLinkHeader(header string) map[string]string {
+	links := make(map[string]string)
+
+	for _, part := range strings.Split(header, ",") {
+		sections := strings.Split(part, ";")
+		if len(sections) < 2 {
+			continue
+		}
+		url := strings.Trim(sections[0], " <>")
+		rel := strings.Trim(sections[1], " rel=\"")
+		links[rel] = url
+	}
+	return links
 }
 
 func (api *GitHubClient) updateRateLimitHeaders(resp *client.Response) {
 	limit := resp.Headers["X-Ratelimit-Limit"]
-
 	if len(limit) > 0 {
-		api.rateLimitFields.rateLimitReset, _ = strconv.ParseInt(limit[0], 10, 64)
+		api.rateLimitFields.rateLimitLimit, _ = strconv.ParseInt(limit[0], 10, 64)
 	}
 
 	remaining := resp.Headers["X-Ratelimit-Remaining"]

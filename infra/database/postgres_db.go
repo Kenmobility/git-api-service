@@ -5,13 +5,11 @@ import (
 
 	"github.com/kenmobility/git-api-service/common/helpers"
 	"github.com/kenmobility/git-api-service/infra/config"
-	"github.com/kenmobility/git-api-service/infra/logger"
 	"github.com/kenmobility/git-api-service/internal/repository"
+	"github.com/rs/zerolog/log"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
-
-var log = logger.New("postgres")
 
 type PostgresDatabase struct {
 	DSN string

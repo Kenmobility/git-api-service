@@ -4,24 +4,29 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"os"
 
 	"github.com/gin-gonic/gin"
 	"github.com/kenmobility/git-api-service/common/message"
 	"github.com/kenmobility/git-api-service/infra/config"
 	"github.com/kenmobility/git-api-service/infra/database"
 	"github.com/kenmobility/git-api-service/infra/git"
-	"github.com/kenmobility/git-api-service/infra/logger"
 	"github.com/kenmobility/git-api-service/internal/http/dtos"
 	"github.com/kenmobility/git-api-service/internal/http/handlers"
 	"github.com/kenmobility/git-api-service/internal/http/routes"
 	"github.com/kenmobility/git-api-service/internal/repository"
 	"github.com/kenmobility/git-api-service/internal/usecases"
+	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
 
 func main() {
 	// Configures system wide Logger object
-	log := logger.New("main")
+	log.Logger = zerolog.New(os.Stderr).With().Timestamp().Caller().Logger()
+	// make it human-readable, only locally
+	if os.Getenv("APP_ENV") == "" {
+		log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr}).With().Caller().Logger()
+	}
 
 	// load env variables
 	config, err := config.LoadConfig("")

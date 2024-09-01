@@ -19,6 +19,7 @@ type RepoMetadata struct {
 	CreatedAt         time.Time
 	UpdatedAt         time.Time
 	LastFetchedCommit string
+	LastFetchedPage   int32
 	IsFetching        bool
 }
 
@@ -33,5 +34,7 @@ func (r RepoMetadata) ToDto() dtos.GitRepoMetadataResponseDto {
 		StarsCount:      r.StarsCount,
 		OpenIssuesCount: r.OpenIssuesCount,
 		WatchersCount:   r.WatchersCount,
+		CreatedAt:       r.CreatedAt.Format(time.RFC850),
+		UpdatedAt:       r.UpdatedAt.Format(time.RFC850),
 	}
 }
