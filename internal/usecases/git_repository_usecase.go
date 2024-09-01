@@ -9,11 +9,13 @@ import (
 	"github.com/kenmobility/git-api-service/common/message"
 	"github.com/kenmobility/git-api-service/infra/config"
 	"github.com/kenmobility/git-api-service/infra/git"
+	"github.com/kenmobility/git-api-service/infra/logger"
 	"github.com/kenmobility/git-api-service/internal/domains"
 	"github.com/kenmobility/git-api-service/internal/http/dtos"
 	"github.com/kenmobility/git-api-service/internal/repository"
-	"github.com/rs/zerolog/log"
 )
+
+var log = logger.New("git_repository_usecase")
 
 type GitRepositoryUsecase interface {
 	AddRepository(ctx context.Context, input dtos.AddRepositoryRequestDto) (*dtos.GitRepoMetadataResponseDto, error)
@@ -179,32 +181,39 @@ func (uc *gitRepoUsecase) fetchCommits(ctx context.Context, repo domains.RepoMet
 	for {
 		commits, err := uc.gitClient.FetchCommits(ctx, repo, since, until, lastFetchedCommit)
 		if err != nil {
-
-			log.Info().Msgf("Error fetching commits for repo %s: %v", repo.Name, err)
+			log.Error().Msgf("Error fetching commits for repo %s: %v", repo.Name, err)
 			return
 		}
 
 		if len(commits) == 0 {
-			log.Info().Msgf("No new commits for repo %s", repo.Name)
+			log.Error().Msgf("No new commits for repo %s", repo.Name)
 			return
 		}
 
-		/*
-			for _, commit := range commits {
-				if err := uc.commitRepo.SaveCommit(&commit); err != nil {
-					log.Printf("Error saving commit for repo %s: %v", repo.Name, err)
-					return
-				}
-				lastFetchedCommit = commit.SHA
+		for _, commit := range commits {
+			c, err := uc.commitRepository.SaveCommit(ctx, commit)
+			if err != nil {
+				log.Error().Msgf("Error saving commit for repo %s: %v", repo.Name, err)
+				return
 			}
-		*/
+			lastFetchedCommit = c.CommitID
+		}
 
-		/* Update the repository's last fetched commit
+		// Update the repository's last fetched commit
 		repo.LastFetchedCommit = lastFetchedCommit
-		if err := uc.repoRepo.UpdateRepository(repo); err != nil {
-			log.Printf("Error updating repository %s: %v", repo.Name, err)
+
+		_, err = uc.repoMetadataRepository.UpdateRepoMetadata(ctx, repo)
+		if err != nil {
+			log.Error().Msgf("Error updating repository %s: %v", repo.Name, err)
 			return
 		}
-		*/
+
+		// Break if we are only fetching up to the current time
+		if lastFetchedCommit == "" {
+			break
+		}
+
+		// Update since for the next batch if fetching based on time
+		since = time.Now()
 	}
 }

@@ -5,11 +5,13 @@ import (
 
 	"github.com/kenmobility/git-api-service/common/helpers"
 	"github.com/kenmobility/git-api-service/infra/config"
+	"github.com/kenmobility/git-api-service/infra/logger"
 	"github.com/kenmobility/git-api-service/internal/repository"
-	"github.com/rs/zerolog/log"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
+
+var log = logger.New("postgres")
 
 type PostgresDatabase struct {
 	DSN string
@@ -30,19 +32,6 @@ func NewPostgresDatabase(config config.Config) Database {
 	}
 
 	return &PostgresDatabase{DSN: conString}
-
-	/*
-		if helpers.IsLocal() {
-			conString += " sslmode=disable"
-		}
-
-		db, err := gorm.Open(postgres.Open(conString), &gorm.Config{})
-		if err != nil {
-			log.Printf("failed to connect to postgres database: %v", err)
-			return nil, err
-		}
-		return db, nil
-	*/
 }
 
 func (p *PostgresDatabase) ConnectDb() (*gorm.DB, error) {

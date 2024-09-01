@@ -11,16 +11,16 @@ import (
 	"time"
 
 	"github.com/kenmobility/git-api-service/common/client"
+	"github.com/kenmobility/git-api-service/infra/logger"
 	"github.com/kenmobility/git-api-service/internal/domains"
-	"github.com/rs/zerolog/log"
 )
 
+var log = logger.New("git_client")
+
 type GitHubClient struct {
-	baseURL       string
-	token         string
-	fetchInterval time.Duration
-	//commitRepository          usecases.CommitRepository
-	//gitRepoMetadataRepository usecases.RepoMetadataRepository
+	baseURL         string
+	token           string
+	fetchInterval   time.Duration
 	client          *client.RestClient
 	rateLimitFields rateLimitFields
 }
@@ -45,9 +45,7 @@ func NewGitHubClient(baseUrl string, token string, fetchInterval time.Duration) 
 		baseURL:       baseUrl,
 		token:         token,
 		fetchInterval: fetchInterval,
-		//commitRepository:          commitRepository,
-		//gitRepoMetadataRepository: gitRepoMetadataRepository,
-		client: client,
+		client:        client,
 	}
 	ts := GitManagerClient(&gc)
 	return ts

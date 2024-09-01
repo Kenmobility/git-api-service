@@ -3,8 +3,11 @@ package repository
 import (
 	"time"
 
+	"github.com/kenmobility/git-api-service/infra/logger"
 	"github.com/kenmobility/git-api-service/internal/domains"
 )
+
+var log = logger.New("git_client")
 
 // Repository represents the Postgres model for the repositories table.
 type Repository struct {

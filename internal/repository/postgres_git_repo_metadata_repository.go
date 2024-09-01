@@ -5,7 +5,6 @@ import (
 
 	"github.com/kenmobility/git-api-service/common/message"
 	"github.com/kenmobility/git-api-service/internal/domains"
-	"github.com/rs/zerolog/log"
 	"gorm.io/gorm"
 )
 
