@@ -5,6 +5,7 @@ import (
 
 	"github.com/kenmobility/git-api-service/common/message"
 	"github.com/kenmobility/git-api-service/internal/domains"
+	"github.com/rs/zerolog/log"
 	"gorm.io/gorm"
 )
 
@@ -80,7 +81,7 @@ func (r *PostgresGitRepoMetadataRepository) UpdateRepoMetadata(ctx context.Conte
 
 	err := r.DB.WithContext(ctx).Model(&Repository{}).Where(&Repository{PublicID: repo.PublicID}).Updates(&dbRepo).Error
 	if err != nil {
-		log.Err(err).Msgf("Persistence::UpdateRepoMetadaa error: %v, (%v)", err.Error(), err.Error())
+		log.Error().Msgf("Persistence::UpdateRepoMetadaa error: %v, (%v)", err.Error(), err.Error())
 		return nil, err
 	}
 

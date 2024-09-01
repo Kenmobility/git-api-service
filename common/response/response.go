@@ -3,10 +3,10 @@ package response
 import "github.com/gin-gonic/gin"
 
 type ResponseObject struct {
-	Code    int         `json:"code,omitempty"`
-	Message string      `json:"message,omitempty"`
-	Data    interface{} `json:"data,omitempty"`
-	Error   interface{} `json:"error,omitempty"`
+	Code    int         `json:"code"`
+	Message string      `json:"message"`
+	Data    interface{} `json:"data"`
+	Error   interface{} `json:"error"`
 }
 
 // Success is used to send a successful request response

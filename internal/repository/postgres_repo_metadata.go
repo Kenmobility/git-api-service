@@ -3,11 +3,8 @@ package repository
 import (
 	"time"
 
-	"github.com/kenmobility/git-api-service/infra/logger"
 	"github.com/kenmobility/git-api-service/internal/domains"
 )
-
-var log = logger.New("git_client")
 
 // Repository represents the Postgres model for the repositories table.
 type Repository struct {
@@ -25,6 +22,7 @@ type Repository struct {
 	UpdatedAt         time.Time
 	LastFetchedCommit string `gorm:"type:varchar"`
 	IsFetching        bool
+	LastFetchedPage   int32 `gorm:"default:1"`
 }
 
 // ToDomain converts a PostgresRepository to a generic domain entity RepoMetadata.
@@ -43,6 +41,7 @@ func (pr *Repository) ToDomain() *domains.RepoMetadata {
 		UpdatedAt:         pr.UpdatedAt,
 		LastFetchedCommit: pr.LastFetchedCommit,
 		IsFetching:        pr.IsFetching,
+		LastFetchedPage:   pr.LastFetchedPage,
 	}
 }
 
@@ -62,5 +61,6 @@ func FromDomainRepo(r *domains.RepoMetadata) *Repository {
 		UpdatedAt:         r.UpdatedAt,
 		LastFetchedCommit: r.LastFetchedCommit,
 		IsFetching:        r.IsFetching,
+		LastFetchedPage:   r.LastFetchedPage,
 	}
 }
