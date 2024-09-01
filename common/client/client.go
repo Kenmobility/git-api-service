@@ -74,7 +74,7 @@ func makeRequest(req *http.Request) (*http.Response, error) {
 		return resp, err
 	}
 
-	log.Info().Msgf("--url: %s, method: %s, resp time: %s", url, req.Method, time.Since(start).String())
+	log.Info().Msgf("--url: %s, method: %s, resp time: %s, resp statusCode: %d", url, req.Method, time.Since(start).String(), resp.StatusCode)
 
 	if 200 <= resp.StatusCode && resp.StatusCode <= 299 {
 		body, err := io.ReadAll(resp.Body)

@@ -86,10 +86,10 @@ func (g *GitHubClient) FetchCommits(ctx context.Context, repo domains.RepoMetada
 	var endpoint string
 
 	if lastFetchedCommit != "" {
-		endpoint = fmt.Sprintf("%s/repos/%s/commits?sha=%s&per_page=%d&page=%d", g.baseURL, repo.Name, lastFetchedCommit, perPage, page)
-	} else {
-		endpoint = fmt.Sprintf("%s/repos/%s/commits?since=%s&until=%s&per_page=%d&page=%d", g.baseURL, repo.Name, since.Format(time.RFC3339), until.Format(time.RFC3339), perPage, page)
-	}
+		//endpoint = fmt.Sprintf("%s/repos/%s/commits?sha=%s&per_page=%d&page=%d", g.baseURL, repo.Name, lastFetchedCommit, perPage, page)
+	} //else {
+	endpoint = fmt.Sprintf("%s/repos/%s/commits?since=%s&until=%s&per_page=%d&page=%d", g.baseURL, repo.Name, since.Format(time.RFC3339), until.Format(time.RFC3339), perPage, page)
+	//}
 
 	response, err := g.client.Get(endpoint, map[string]string{}, g.getHeaders())
 	if err != nil {

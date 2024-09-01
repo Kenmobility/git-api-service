@@ -72,7 +72,7 @@ func LoadConfig(path string) (*Config, error) {
 		log.Error().Msgf("Invalid GIT_COMMIT_FETCH_PER_PAGE [%s] env format passed, setting to 50: %v", perPage, err)
 	}
 
-	endDate := os.Getenv("DEFAULT_START_DATE")
+	endDate := os.Getenv("DEFAULT_END_DATE")
 	if endDate == "" {
 		eDate = time.Now()
 	} else {

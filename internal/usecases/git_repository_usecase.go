@@ -96,7 +96,7 @@ func (uc *gitRepoUsecase) AddRepository(ctx context.Context, input dtos.AddRepos
 	}
 
 	// Start fetching commits for the new added repository in a new gorouting
-	go uc.startFetchingRepositoryCommits(ctx, *repoMetadata)
+	go uc.startFetchingRepositoryCommits(ctx, *sRepoMetadata)
 
 	repoDto := sRepoMetadata.ToDto()
 
@@ -183,7 +183,7 @@ func (uc *gitRepoUsecase) startPeriodicFetching(ctx context.Context, repo domain
 }
 
 func (uc *gitRepoUsecase) fetchCommits(ctx context.Context, repo domains.RepoMetadata) {
-	log.Info().Msgf("fetchcommits for repo: %s", repo.Name)
+	log.Info().Msgf("fetch commits for repo: %s", repo.Name)
 	page := repo.LastFetchedPage
 
 	repo.IsFetching = true
@@ -198,7 +198,6 @@ func (uc *gitRepoUsecase) fetchCommits(ctx context.Context, repo domains.RepoMet
 
 	until := uc.config.DefaultEndDate
 
-	// Fetch commits starting from the last fetched commit
 	for {
 		commits, morePages, err := uc.gitClient.FetchCommits(ctx, repo, uc.config.DefaultStartDate, until, lastFetchedCommit, int(page), uc.config.GitCommitFetchPerPage)
 		if err != nil {
@@ -208,7 +207,9 @@ func (uc *gitRepoUsecase) fetchCommits(ctx context.Context, repo domains.RepoMet
 
 		if len(commits) == 0 {
 			log.Error().Msgf("No new commits for repo %s", repo.Name)
-			return
+			//reset the page to ensure no commits data is missed within range
+			page = 1
+			continue
 		}
 
 		for _, commit := range commits {
@@ -236,7 +237,6 @@ func (uc *gitRepoUsecase) fetchCommits(ctx context.Context, repo domains.RepoMet
 
 		page++
 
-		// Update until for the next batch if fetching based on time
 		until = time.Now()
 	}
 }

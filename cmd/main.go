@@ -59,11 +59,12 @@ func main() {
 	gitCommitUsecase := usecases.NewManageGitCommitUsecase(commitRepository, repoMetadataRepository)
 	gitRepositoryUsecase := usecases.NewGitRepositoryUsecase(repoMetadataRepository, commitRepository, gitClient, *config)
 
-	// seed and set 'chromium/chromium' repo as default repository if not seeded
+	/*seed and set 'chromium/chromium' repo as default repository if not seeded
 	err = seedDefaultRepository(config, gitRepositoryUsecase)
 	if err != nil && err != message.ErrRepoAlreadyAdded {
 		log.Fatal().Msgf("failed to seed default repository: %v, (%v)", err.Error(), err.Error())
 	}
+	*/
 
 	// Initialize handlers
 	commitHandler := handlers.NewCommitHandler(gitCommitUsecase)
