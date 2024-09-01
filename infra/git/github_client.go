@@ -24,9 +24,9 @@ type GitHubClient struct {
 }
 
 type rateLimitFields struct {
-	rateLimitLimit     int64
+	rateLimitLimit     int
 	rateLimitRemaining int
-	rateLimitReset     int64
+	rateLimitReset     int
 }
 
 func (g *GitHubClient) getHeaders() map[string]string {
@@ -105,7 +105,7 @@ func (g *GitHubClient) FetchCommits(ctx context.Context, repo domains.RepoMetada
 	g.updateRateLimitHeaders(response)
 
 	if g.rateLimitFields.rateLimitRemaining == 0 {
-		waitTime := time.Until(time.Unix(g.rateLimitFields.rateLimitReset, 0))
+		waitTime := time.Until(time.Unix(int64(g.rateLimitFields.rateLimitReset), 0))
 		log.Info().Msgf("Rate limit exceeded. Waiting for %v until reset...", waitTime)
 	}
 
@@ -144,29 +144,6 @@ func (g *GitHubClient) FetchCommits(ctx context.Context, repo domains.RepoMetada
 	return cc, morePages, nil
 }
 
-/*
-func (api *GitHubClient) parseNextURL(linkHeader []string) string {
-	if len(linkHeader) == 0 {
-		return ""
-	}
-	links := strings.Split(linkHeader[0], ",")
-	for _, link := range links {
-		parts := strings.Split(strings.TrimSpace(link), ";")
-		if len(parts) < 2 {
-			continue
-		}
-
-		urlPart := strings.Trim(parts[0], "<>")
-		relPart := strings.TrimSpace(parts[1])
-
-		if relPart == `rel="next"` {
-			return urlPart
-		}
-	}
-	return ""
-}
-*/
-
 // hasNextPage checks if there is a 'next' link in the Link header
 func (g *GitHubClient) hasNextPage(linkHeader string) bool {
 	links := g.parseLinkHeader(linkHeader)
@@ -190,14 +167,14 @@ func (g *GitHubClient) parseLinkHeader(header string) map[string]string {
 	return links
 }
 
+// updateRateLimitHeaders updates the link header rate limit values to the fields
 func (api *GitHubClient) updateRateLimitHeaders(resp *client.Response) {
 	limit := resp.Headers["X-Ratelimit-Limit"]
 	if len(limit) > 0 {
-		api.rateLimitFields.rateLimitLimit, _ = strconv.ParseInt(limit[0], 10, 64)
+		api.rateLimitFields.rateLimitLimit, _ = strconv.Atoi(limit[0])
 	}
 
 	remaining := resp.Headers["X-Ratelimit-Remaining"]
-
 	if len(remaining) > 0 {
 		api.rateLimitFields.rateLimitRemaining, _ = strconv.Atoi(remaining[0])
 		log.Info().Msgf("Rate limit remaining: %d", api.rateLimitFields.rateLimitRemaining)
@@ -205,7 +182,7 @@ func (api *GitHubClient) updateRateLimitHeaders(resp *client.Response) {
 
 	reset := resp.Headers["X-Ratelimit-Reset"]
 	if len(reset) > 0 {
-		api.rateLimitFields.rateLimitReset, _ = strconv.ParseInt(reset[0], 10, 64)
+		api.rateLimitFields.rateLimitReset, _ = strconv.Atoi(reset[0])
 	}
 
 	used := resp.Headers["X-Ratelimit-Used"]
