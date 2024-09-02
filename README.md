@@ -88,12 +88,12 @@ curl \
 - GET Request to get repository metadata using repository id. 
 ``` 
 curl -L \
-  -X GET http://localhost:5000/repository/5846c0f0-81f5-45e3-9d4a-cfc6fe4f176a \
+  -X GET http://127.0.0.1:5000/repository/5846c0f0-81f5-45e3-9d4a-cfc6fe4f176a \
 ```
 
 - GET Request to fetch N (as limit) top commit authors of the any added repository using its repository id with limit as query param, if limit is not passed, a defualt limit of 10 is used.
 ```
 curl -L \
-  -X GET http://localhost:5000/repos/5846c0f0-81f5-45e3-9d4a-cfc6fe4f176a/top-authors?limit=5 \
+  -X GET http://127.0.0.1:5000/repos/5846c0f0-81f5-45e3-9d4a-cfc6fe4f176a/top-authors?limit=5 \
 ```
   
