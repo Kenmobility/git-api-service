@@ -32,6 +32,10 @@ func (ch CommitHandlers) GetCommitsByRepositoryId(ctx *gin.Context) {
 
 	repoName, resp, err := ch.manageGitCommitUsecase.GetAllCommitsByRepository(ctx, repositoryId, query)
 	if err != nil {
+		if err == message.ErrNoRecordFound {
+			response.Failure(ctx, http.StatusBadRequest, message.ErrInvalidRepositoryId.Error(), message.ErrInvalidRepositoryId.Error())
+			return
+		}
 		response.Failure(ctx, http.StatusInternalServerError, err.Error(), err.Error())
 		return
 	}
