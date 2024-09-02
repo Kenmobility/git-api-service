@@ -94,7 +94,7 @@ func main() {
 	log.Info().Msgf("Git API Service is listening on address %s", server.Addr)
 }
 
-// SeedRepository seeds a default chromium repo and set it as tracking
+// seedDefaultRepository seeds a default chromium repo and set it as tracking
 func seedDefaultRepository(config *config.Config, repositoryUsecase usecases.GitRepositoryUsecase) error {
 	defaultRepo := dtos.AddRepositoryRequestDto{
 		Name: config.DefaultRepository,
