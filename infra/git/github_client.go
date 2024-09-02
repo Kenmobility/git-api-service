@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/kenmobility/git-api-service/common/client"
+	"github.com/kenmobility/git-api-service/common/message"
 	"github.com/kenmobility/git-api-service/internal/domains"
 	"github.com/rs/zerolog/log"
 )
@@ -58,7 +59,7 @@ func (g *GitHubClient) FetchRepoMetadata(ctx context.Context, repositoryName str
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("repo status not fetched")
+		return nil, message.ErrRepoMetaDataNotFetched
 	}
 
 	var gitHubRepoResponse GitHubRepoMetadataResponse
@@ -116,7 +117,7 @@ func (g *GitHubClient) FetchCommits(ctx context.Context, repo domains.RepoMetada
 	var commitRes []GithubCommitResponse
 
 	if err := json.Unmarshal([]byte(response.Body), &commitRes); err != nil {
-		fmt.Printf("marshal error, [%v]", err)
+		log.Info().Msgf("marshal error, [%v]", err)
 		return nil, false, errors.New("could not unmarshal commits response")
 	}
 
