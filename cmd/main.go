@@ -84,7 +84,7 @@ func main() {
 	ctx, cancelFunc := context.WithCancel(context.Background())
 	defer cancelFunc()
 
-	// Resume repo commits fetching for all repositories
+	// Resume repo commits fetching for all saved repositories
 	go gitRepositoryUsecase.ResumeFetching(ctx)
 
 	// start web server
@@ -94,7 +94,7 @@ func main() {
 	log.Info().Msgf("Git API Service is listening on address %s", server.Addr)
 }
 
-// seedDefaultRepository seeds a default chromium repo and set it as tracking
+// seedDefaultRepository seeds a default chromium repo
 func seedDefaultRepository(config *config.Config, repositoryUsecase usecases.GitRepositoryUsecase) error {
 	defaultRepo := dtos.AddRepositoryRequestDto{
 		Name: config.DefaultRepository,
