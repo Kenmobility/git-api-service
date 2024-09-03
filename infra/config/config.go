@@ -78,7 +78,7 @@ func LoadConfig(path string) (*Config, error) {
 	} else {
 		eDate, err = time.Parse(time.RFC3339, endDate)
 		if err != nil {
-			log.Info().Msgf("Invalid DEFAULT_END_DATE [%s] env format: %v", endDate, err)
+			log.Error().Msgf("Invalid DEFAULT_END_DATE [%s] env format: %v", endDate, err)
 			return nil, err
 		}
 	}
@@ -104,7 +104,7 @@ func LoadConfig(path string) (*Config, error) {
 	validate := validator.New()
 	err = validate.Struct(configVar)
 	if err != nil {
-		log.Info().Msgf("env validation error: %s", err.Error())
+		log.Error().Msgf("env validation error: %s", err.Error())
 		return nil, err
 	}
 

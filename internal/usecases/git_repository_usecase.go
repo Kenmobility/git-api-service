@@ -95,7 +95,7 @@ func (uc *gitRepoUsecase) AddRepository(ctx context.Context, input dtos.AddRepos
 		return nil, err
 	}
 
-	// Start fetching commits for the new added repository in a new gorouting
+	// Start fetching commits for the new added repository in a new goroutine
 	go uc.startFetchingRepositoryCommits(ctx, *sRepoMetadata)
 
 	repoDto := sRepoMetadata.ToDto()
@@ -132,7 +132,7 @@ func (uc *gitRepoUsecase) startFetchingRepositoryCommits(ctx context.Context, re
 		repo.LastFetchedPage = page
 		_, err = uc.repoMetadataRepository.UpdateRepoMetadata(ctx, repo)
 		if err != nil {
-			log.Printf("Error updating repository %s: %v", repo.Name, err)
+			log.Info().Msgf("Error updating repository %s: %v", repo.Name, err)
 			continue
 		}
 
