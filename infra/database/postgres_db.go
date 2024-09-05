@@ -32,6 +32,7 @@ func NewPostgresDatabase(config config.Config) Database {
 	return &PostgresDatabase{DSN: conString}
 }
 
+// ConnectDb establishes a database connection or error if not successful
 func (p *PostgresDatabase) ConnectDb() (*gorm.DB, error) {
 	db, err := gorm.Open(postgres.Open(p.DSN), &gorm.Config{})
 	if err != nil {
@@ -42,6 +43,7 @@ func (p *PostgresDatabase) ConnectDb() (*gorm.DB, error) {
 	return db, nil
 }
 
+// Migrate does db schema migration for PostgreSQL
 func (p *PostgresDatabase) Migrate(db *gorm.DB) error {
 	// Migrate the schema for PostgreSQL
 	return db.AutoMigrate(&repository.Repository{}, &repository.Commit{})
