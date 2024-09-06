@@ -25,10 +25,6 @@ cp .env.example .env
 - go to [https://github.com/](GitHub) to set up a GitHub API token (i.e Personal access token) and set value for the GIT_HUB_TOKEN env variable.
 
 - (OPTIONAL) if the default values of the DATABASE_HOST, DATABASE_PORT, DATABASE_USER, DATABASE_PASSWORD or DATABASE_NAME in .env file were altered, ensure that the 'make postgres' command in the makefile matches the new set values.
-  ```bash
-  postgres: 
-	  docker run --name github-api-hex-db-con -p {DATABASE_PORT}:5432 -e POSTGRES_USER={DATABASE_USER} -e POSTGRES_PASSWORD={DATABASE_PASSWORD} -d postgres:14-alpine
-  ```
 
 ## 4 Open Docker desktop application
 - Ensure that docker desktop is started and running on your machine 

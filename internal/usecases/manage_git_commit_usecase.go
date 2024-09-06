@@ -9,7 +9,7 @@ import (
 
 type ManageGitCommitUsecase interface {
 	GetAllCommitsByRepository(ctx context.Context, repoId string, query dtos.APIPagingDto) (*string, *dtos.AllCommitsResponse, error)
-	GetTopRepositoryCommitAuthors(ctx context.Context, repoId string, limit int) (*string, []string, error)
+	GetTopRepositoryCommitAuthors(ctx context.Context, repoId string, limit int) (*string, []dtos.AuthorCommitCount, error)
 }
 
 type manageGitCommitUsecase struct {
@@ -38,7 +38,7 @@ func (uc *manageGitCommitUsecase) GetAllCommitsByRepository(ctx context.Context,
 	return &repoMetaData.Name, commitsResp, nil
 }
 
-func (uc *manageGitCommitUsecase) GetTopRepositoryCommitAuthors(ctx context.Context, repoId string, limit int) (*string, []string, error) {
+func (uc *manageGitCommitUsecase) GetTopRepositoryCommitAuthors(ctx context.Context, repoId string, limit int) (*string, []dtos.AuthorCommitCount, error) {
 	repoMetaData, err := uc.repoMetadataRepository.RepoMetadataByPublicId(ctx, repoId)
 	if err != nil {
 		return nil, nil, err

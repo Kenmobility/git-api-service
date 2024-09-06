@@ -59,17 +59,18 @@ func (gc *PostgresGitCommitRepository) AllCommitsByRepository(ctx context.Contex
 
 }
 
-func (gc *PostgresGitCommitRepository) TopCommitAuthorsByRepository(ctx context.Context, repo domains.RepoMetadata, limit int) ([]string, error) {
-	var authors []string
+func (gc *PostgresGitCommitRepository) TopCommitAuthorsByRepository(ctx context.Context, repo domains.RepoMetadata, limit int) ([]dtos.AuthorCommitCount, error) {
+	//var authors []string
+	var results []dtos.AuthorCommitCount
 	err := gc.DB.WithContext(ctx).Model(&domains.Commit{}).
-		Select("author").
+		Select("author, COUNT(author) as commit_count").
 		Where("repository_name = ?", repo.Name).
 		Group("author").
-		Order("count(author) DESC").
+		Order("commit_count DESC").
 		Limit(limit).
-		Find(&authors).Error
+		Scan(&results).Error
 
-	return authors, err
+	return results, err
 }
 
 func commitResponse(commits []Commit) []dtos.CommitResponseDto {

@@ -99,7 +99,7 @@ func seedDefaultRepository(config *config.Config, repositoryUsecase usecases.Git
 	defaultRepo := dtos.AddRepositoryRequestDto{
 		Name: config.DefaultRepository,
 	}
-	repo, err := repositoryUsecase.AddRepository(context.Background(), defaultRepo)
+	repo, err := repositoryUsecase.StartIndexing(context.Background(), defaultRepo)
 	if err != nil && err != message.ErrNoRecordFound {
 		return err
 	}

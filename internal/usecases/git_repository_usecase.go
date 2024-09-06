@@ -16,9 +16,9 @@ import (
 )
 
 type GitRepositoryUsecase interface {
-	AddRepository(ctx context.Context, input dtos.AddRepositoryRequestDto) (*dtos.GitRepoMetadataResponseDto, error)
-	GetRepositoryById(ctx context.Context, repoId string) (*dtos.GitRepoMetadataResponseDto, error)
-	GellAllRepositories(ctx context.Context) ([]dtos.GitRepoMetadataResponseDto, error)
+	StartIndexing(ctx context.Context, input dtos.AddRepositoryRequestDto) (*dtos.GitRepoMetadataResponseDto, error)
+	GetById(ctx context.Context, repoId string) (*dtos.GitRepoMetadataResponseDto, error)
+	GellAll(ctx context.Context) ([]dtos.GitRepoMetadataResponseDto, error)
 	ResumeFetching(ctx context.Context) error
 }
 
@@ -39,7 +39,7 @@ func NewGitRepositoryUsecase(repoMetadataRepo repository.RepoMetadataRepository,
 	}
 }
 
-func (uc *gitRepoUsecase) GetRepositoryById(ctx context.Context, repoId string) (*dtos.GitRepoMetadataResponseDto, error) {
+func (uc *gitRepoUsecase) GetById(ctx context.Context, repoId string) (*dtos.GitRepoMetadataResponseDto, error) {
 	repo, err := uc.repoMetadataRepository.RepoMetadataByPublicId(ctx, repoId)
 	if err != nil {
 		return nil, err
@@ -50,7 +50,7 @@ func (uc *gitRepoUsecase) GetRepositoryById(ctx context.Context, repoId string) 
 	return &repoDto, nil
 }
 
-func (uc *gitRepoUsecase) GellAllRepositories(ctx context.Context) ([]dtos.GitRepoMetadataResponseDto, error) {
+func (uc *gitRepoUsecase) GellAll(ctx context.Context) ([]dtos.GitRepoMetadataResponseDto, error) {
 	repos, err := uc.repoMetadataRepository.AllRepoMetadata(ctx)
 	if err != nil {
 		return nil, err
@@ -63,7 +63,7 @@ func (uc *gitRepoUsecase) GellAllRepositories(ctx context.Context) ([]dtos.GitRe
 	return repoDtoResponse, nil
 }
 
-func (uc *gitRepoUsecase) AddRepository(ctx context.Context, input dtos.AddRepositoryRequestDto) (*dtos.GitRepoMetadataResponseDto, error) {
+func (uc *gitRepoUsecase) StartIndexing(ctx context.Context, input dtos.AddRepositoryRequestDto) (*dtos.GitRepoMetadataResponseDto, error) {
 	//validate repository name to ensure it has owner and repo name
 	if !helpers.IsRepositoryNameValid(input.Name) {
 		return nil, message.ErrInvalidRepositoryName
@@ -104,13 +104,11 @@ func (uc *gitRepoUsecase) AddRepository(ctx context.Context, input dtos.AddRepos
 }
 
 func (uc *gitRepoUsecase) startFetchingRepositoryCommits(ctx context.Context, repo domains.RepoMetadata) {
-	ticker := time.NewTicker(uc.config.FetchInterval)
-	defer ticker.Stop()
 
 	page := repo.LastFetchedPage
 	lastFetchedCommit := ""
-
-	for range ticker.C {
+	log.Info().Msgf("fetching commits for repo: %s, starting from page-%d", repo.Name, page)
+	for {
 		// Fetch commits for the repository
 		commits, morePages, err := uc.gitClient.FetchCommits(ctx, repo, uc.config.DefaultStartDate, uc.config.DefaultEndDate, "", int(page), uc.config.GitCommitFetchPerPage)
 		if err != nil {
@@ -164,8 +162,8 @@ func (uc *gitRepoUsecase) startPeriodicFetching(ctx context.Context, repo domain
 	ticker := time.NewTicker(uc.config.FetchInterval)
 	defer ticker.Stop()
 
-	// Initial fetch to start immediately
-	//uc.fetchCommits(ctx, repo)
+	// Initial monitoring to start immediately
+	uc.fetchCommits(ctx, repo)
 
 	for {
 		select {
@@ -183,7 +181,7 @@ func (uc *gitRepoUsecase) startPeriodicFetching(ctx context.Context, repo domain
 }
 
 func (uc *gitRepoUsecase) fetchCommits(ctx context.Context, repo domains.RepoMetadata) {
-	log.Info().Msgf("fetch commits for repo: %s", repo.Name)
+	log.Info().Msgf("Resume fetching commits for repo: %s", repo.Name)
 	page := repo.LastFetchedPage
 
 	repo.IsFetching = true
@@ -209,6 +207,7 @@ func (uc *gitRepoUsecase) fetchCommits(ctx context.Context, repo domains.RepoMet
 			log.Error().Msgf("No new commits for repo %s", repo.Name)
 			//reset the page to ensure no commits data is missed within range
 			page = 1
+			lastFetchedCommit = "" //don't use sha endpoint
 			continue
 		}
 
