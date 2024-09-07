@@ -96,23 +96,21 @@ func (uc *gitRepoUsecase) StartIndexing(ctx context.Context, input dtos.AddRepos
 	}
 
 	// Start fetching commits for the new added repository in a goroutine
-	go uc.startFetchingRepositoryCommits(ctx, *sRepoMetadata)
+	go uc.startFetchingAndSavingCommits(ctx, *sRepoMetadata)
 
 	repoDto := sRepoMetadata.ToDto()
 
 	return &repoDto, nil
 }
 
-func (uc *gitRepoUsecase) startFetchingRepositoryCommits(ctx context.Context, repo domains.RepoMetadata) {
-
+func (uc *gitRepoUsecase) startFetchingAndSavingCommits(ctx context.Context, repo domains.RepoMetadata) {
 	page := repo.LastFetchedPage
 	lastFetchedCommit := ""
 	log.Info().Msgf("fetching commits for repo: %s, starting from page-%d", repo.Name, page)
 	for {
-		// Fetch commits for the repository
 		commits, morePages, err := uc.gitClient.FetchCommits(ctx, repo, uc.config.DefaultStartDate, uc.config.DefaultEndDate, "", int(page), uc.config.GitCommitFetchPerPage)
 		if err != nil {
-			log.Info().Msgf("Failed to fetch commits for repository %s: %v", repo.Name, err)
+			log.Err(err).Msgf("Failed to fetch commits for repository %s: %v", repo.Name, err)
 			continue
 		}
 
@@ -120,7 +118,13 @@ func (uc *gitRepoUsecase) startFetchingRepositoryCommits(ctx context.Context, re
 		for _, commit := range commits {
 			_, err := uc.commitRepository.SaveCommit(ctx, commit)
 			if err != nil {
-				log.Info().Msgf("failed to save commitId - %s for repository %s: %v", commit.CommitID, repo.Name, err)
+				if strings.Contains(err.Error(), `duplicate key value violates unique constraint "idx_commits_commit_id"`) {
+					log.Info().Msgf("already saved commit-id:%s for repo %s", commit.CommitID, repo.Name)
+					continue
+				} else {
+					log.Err(err).Msgf("Error saving commit-id:%s for repo %s: %v", commit.CommitID, repo.Name, err)
+					continue
+				}
 			}
 			lastFetchedCommit = commit.CommitID
 		}
@@ -130,7 +134,7 @@ func (uc *gitRepoUsecase) startFetchingRepositoryCommits(ctx context.Context, re
 		repo.LastFetchedPage = page
 		_, err = uc.repoMetadataRepository.UpdateRepoMetadata(ctx, repo)
 		if err != nil {
-			log.Info().Msgf("Error updating repository %s: %v", repo.Name, err)
+			log.Debug().Msgf("Error updating repository %s: %v", repo.Name, err)
 			continue
 		}
 
@@ -172,7 +176,7 @@ func (uc *gitRepoUsecase) startPeriodicFetching(ctx context.Context, repo domain
 		case <-ticker.C:
 			r, err := uc.repoMetadataRepository.RepoMetadataByPublicId(ctx, repo.PublicID)
 			if err != nil {
-				log.Err(err).Msg("error getting updated last fetched page for repo metadata")
+				log.Debug().Msgf("error getting updated last fetched page for repo metadata: %v", err)
 				r = &repo
 			}
 			uc.fetchAndSaveCommits(ctx, *r)
@@ -228,7 +232,7 @@ func (uc *gitRepoUsecase) fetchAndSaveCommits(ctx context.Context, repo domains.
 		repo.LastFetchedPage = page
 		_, err = uc.repoMetadataRepository.UpdateRepoMetadata(ctx, repo)
 		if err != nil {
-			log.Error().Msgf("Error updating repository %s: %v", repo.Name, err)
+			log.Debug().Msgf("Error updating repository %s: %v", repo.Name, err)
 			return
 		}
 
