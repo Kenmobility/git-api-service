@@ -93,4 +93,17 @@ curl -L \
 curl -L \
   -X GET http://127.0.0.1:5000/repos/5846c0f0-81f5-45e3-9d4a-cfc6fe4f176a/top-authors?limit=5 \
 ```
-  
+
+## Clean Slate: Removing Database
+- To remove all the data (droping the database) run 'make dropdb' to delete the database, ensure program isn't running and database isn't openned in any database client e.g pgAdmin or TablePlus, etc
+```bash
+make dropdb
+```
+- Then run 'make createdb' to recreate the database before restarting the program with 'make server'
+```bash
+make createdb
+```
+- Then run 'make server' to rerun database migrations (recreate all tables) and starts program
+```bash
+make server
+```
