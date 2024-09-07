@@ -103,7 +103,7 @@ make dropdb
 ```bash
 make createdb
 ```
-- Then run 'make server' to rerun database migrations (recreate all tables) and starts program
+- Then run 'make server' to rerun database migrations (recreate all tables, seeds default repo) and starts program
 ```bash
 make server
 ```
