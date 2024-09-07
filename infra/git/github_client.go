@@ -31,6 +31,9 @@ type rateLimitFields struct {
 }
 
 func (g *GitHubClient) getHeaders() map[string]string {
+	if len(g.token) == 0 {
+		return map[string]string{}
+	}
 	return map[string]string{
 		"Content-Type":  "application/json",
 		"Authorization": fmt.Sprintf("Bearer %s", g.token),
@@ -100,7 +103,7 @@ func (g *GitHubClient) FetchCommits(ctx context.Context, repo domains.RepoMetada
 	}
 
 	if response.StatusCode == http.StatusForbidden {
-		return nil, false, fmt.Errorf("rate limit exceeded")
+		return nil, false, message.ErrRateLimitExceeded
 	}
 
 	g.updateRateLimitHeaders(response)
@@ -108,6 +111,7 @@ func (g *GitHubClient) FetchCommits(ctx context.Context, repo domains.RepoMetada
 	if g.rateLimitFields.rateLimitRemaining == 0 {
 		waitTime := time.Until(time.Unix(int64(g.rateLimitFields.rateLimitReset), 0))
 		log.Info().Msgf("Rate limit exceeded. Waiting for %v until reset...", waitTime)
+		time.Sleep(waitTime)
 	}
 
 	if response.StatusCode != http.StatusOK {

@@ -13,7 +13,7 @@ import (
 
 type Config struct {
 	AppEnv                string
-	GitHubToken           string `validate:"required"`
+	GitHubToken           string
 	DatabaseHost          string `validate:"required"`
 	DatabasePort          string `validate:"required"`
 	DatabaseUser          string `validate:"required"`
