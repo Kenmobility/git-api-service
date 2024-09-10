@@ -7,7 +7,7 @@ createdb:
 	docker exec -it github-api-hex-db-con createdb --username=root --owner=root github_api_db
 
 dropdb:
-    docker exec -it github-api-hex-db-con dropdb github_api_db
+	docker exec -it github-api-hex-db-con dropdb github_api_db
 
 test:
 	go test -v ./...
