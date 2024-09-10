@@ -30,17 +30,7 @@ cp .env.example .env
 ## 4 Open Docker desktop application
 - Ensure that docker desktop is started and running on your machine 
 
-## 5. Attempt to stop and remove postgreSQL container by name
-- run 'docker stop github-api-hex-db-con' to attempt stopping the container if it exists and running.
-```bash
-docker stop github-api-hex-db-con
-``` 
-- run 'docker rm github-api-hex-db-con' to try removal of the container if it exists to ensure that the container name for postgreSQL does not exist.
-```bash
-docker rm github-api-hex-db-con
-``` 
-
-## 6. Run makefile commands 
+## 5. Run makefile commands 
 - run 'make postgres' to pull and run PostgreSQL instance as docker container
 ```bash
 make postgres
@@ -49,20 +39,13 @@ make postgres
 ```bash
 make createdb
 ```
-
-## 7. Unit Testing
-
-Run 'make test' to run the unit tests:
-```bash
-make test
-```
-## 8. Start web server
+## 6. Start web server
 - run 'make server' to start the service
 ```bash
 make server
 ```
 
-## 9. Endpoint requests
+## 7. Endpoint requests
 - POST application/json Request to add a new repository
 ``` 
 curl -d '{"name": "GoogleChrome/chromium-dashboard"}'\

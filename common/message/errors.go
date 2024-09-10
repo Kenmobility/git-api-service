@@ -14,4 +14,5 @@ var (
 	ErrInvalidRepositoryName  = errors.New("invalid repository name, eg format is {owner/repositoryName}")
 
 	ErrRateLimitExceeded = errors.New("rate limit exceeded")
+	ErrContextCancelled  = errors.New("context cancelled")
 )

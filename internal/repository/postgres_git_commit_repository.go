@@ -3,7 +3,9 @@ package repository
 import (
 	"context"
 	"fmt"
+	"strings"
 
+	"github.com/kenmobility/git-api-service/common/message"
 	"github.com/kenmobility/git-api-service/internal/domain"
 	"github.com/kenmobility/git-api-service/internal/http/dtos"
 	"github.com/rs/zerolog/log"
@@ -20,10 +22,38 @@ func NewPostgresGitCommitRepository(db *gorm.DB) CommitRepository {
 	}
 }
 
+// GetByCommitID fetches a commit using commit ID
+func (gc *PostgresGitCommitRepository) GetByCommitID(ctx context.Context, commitID string) (*domain.Commit, error) {
+	if ctx.Err() == context.Canceled {
+		return nil, message.ErrContextCancelled
+	}
+	var commit Commit
+	err := gc.DB.WithContext(ctx).Where("commit_id = ?", commitID).Find(&commit).Error
+
+	if commit.ID == 0 {
+		return nil, message.ErrNoRecordFound
+	}
+	return commit.ToDomain(), err
+}
+
 // SaveCommit stores a repository commit into the database
 func (gc *PostgresGitCommitRepository) SaveCommit(ctx context.Context, commit domain.Commit) (*domain.Commit, error) {
-	err := gc.DB.WithContext(ctx).Create(&commit).Error
-	return &commit, err
+	if ctx.Err() == context.Canceled {
+		return nil, message.ErrContextCancelled
+	}
+
+	tx := gc.DB.WithContext(ctx).Create(&commit)
+
+	if tx.Error != nil {
+		if strings.Contains(tx.Error.Error(), `duplicate key value violates unique constraint "idx_commits_commit_id"`) {
+			log.Warn().Msgf("already saved commit-id:%s", commit.CommitID)
+			return &commit, nil
+		} else {
+			log.Info().Msgf("getting the save commit error and returning it")
+		}
+		return &commit, tx.Error
+	}
+	return &commit, nil
 }
 
 // GetAllCommitsByRepositoryName fetches all stores commits by repository name

@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/kenmobility/git-api-service/common/message"
@@ -75,11 +78,28 @@ func main() {
 		Handler: ginEngine,
 	}
 
-	ctx, cancelFunc := context.WithCancel(context.Background())
-	defer cancelFunc()
+	// Handle graceful shutdown
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
 
 	// Resume repo commits fetching for all saved repositories
 	go gitRepositoryUsecase.ResumeFetching(ctx)
+
+	go func() {
+		for {
+			select {
+			case <-ctx.Done():
+				log.Warn().Msg("Program is shutting down...")
+				// Call method to set isFetching to false in DB
+				if err := gitRepositoryUsecase.UpdateFetchingStatusForAllRepositories(context.Background(), false); err != nil {
+					log.Err(err).Msgf("Error updating isFetching to false: %v", err)
+				}
+				os.Exit(0)
+			default:
+				time.Sleep(5 * time.Second)
+			}
+		}
+	}()
 
 	if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 		log.Fatal().Msgf("listen: %v, (%v)\n", err.Error(), err.Error())

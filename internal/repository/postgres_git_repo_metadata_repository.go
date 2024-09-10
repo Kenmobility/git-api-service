@@ -29,6 +29,7 @@ func (r *PostgresGitRepoMetadataRepository) SaveRepoMetadata(ctx context.Context
 		StarsCount:      repo.StarsCount,
 		OpenIssuesCount: repo.OpenIssuesCount,
 		WatchersCount:   repo.WatchersCount,
+		IsFetching:      repo.IsFetching,
 		CreatedAt:       repo.CreatedAt,
 		UpdatedAt:       repo.UpdatedAt,
 	}
@@ -41,6 +42,10 @@ func (r *PostgresGitRepoMetadataRepository) SaveRepoMetadata(ctx context.Context
 }
 
 func (r *PostgresGitRepoMetadataRepository) RepoMetadataByPublicId(ctx context.Context, publicId string) (*domain.RepoMetadata, error) {
+	if ctx.Err() == context.Canceled {
+		return nil, message.ErrContextCancelled
+	}
+
 	var repo Repository
 	err := r.DB.WithContext(ctx).Where("public_id = ?", publicId).Find(&repo).Error
 
@@ -51,6 +56,9 @@ func (r *PostgresGitRepoMetadataRepository) RepoMetadataByPublicId(ctx context.C
 }
 
 func (r *PostgresGitRepoMetadataRepository) RepoMetadataByName(ctx context.Context, name string) (*domain.RepoMetadata, error) {
+	if ctx.Err() == context.Canceled {
+		return nil, message.ErrContextCancelled
+	}
 	var repo Repository
 	err := r.DB.WithContext(ctx).Where("name = ?", name).Find(&repo).Error
 	if repo.ID == 0 {
@@ -77,6 +85,9 @@ func (r *PostgresGitRepoMetadataRepository) AllRepoMetadata(ctx context.Context)
 }
 
 func (r *PostgresGitRepoMetadataRepository) UpdateRepoMetadata(ctx context.Context, repo domain.RepoMetadata) (*domain.RepoMetadata, error) {
+	if ctx.Err() == context.Canceled {
+		return nil, message.ErrContextCancelled
+	}
 	dbRepo := FromDomainRepo(&repo)
 
 	err := r.DB.WithContext(ctx).Model(&Repository{}).Where(&Repository{PublicID: repo.PublicID}).Updates(&dbRepo).Error
@@ -86,4 +97,11 @@ func (r *PostgresGitRepoMetadataRepository) UpdateRepoMetadata(ctx context.Conte
 	}
 
 	return dbRepo.ToDomain(), nil
+}
+
+func (r *PostgresGitRepoMetadataRepository) UpdateFetchingStateForAllRepos(ctx context.Context, isFetching bool) error {
+	return r.DB.WithContext(ctx).Model(&Repository{}).
+		Where("is_fetching = ?", true).
+		Update("is_fetching", isFetching).
+		Error
 }
