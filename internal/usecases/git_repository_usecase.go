@@ -178,14 +178,14 @@ func (uc *gitRepoUsecase) startPeriodicFetching(ctx context.Context, repo domain
 			}
 			if !r.IsFetching {
 				log.Info().Msgf("Commits periodic fetching started for repo %v", repo.Name)
-				uc.fetchAndSaveCommits(ctx, *r)
+				uc.fetchAndReconcileCommits(ctx, *r)
 			}
 		}
 	}
 }
 
-func (uc *gitRepoUsecase) fetchAndSaveCommits(ctx context.Context, repo domain.RepoMetadata) {
-	log.Info().Msgf("Resume fetching commits for repo: %s", repo.Name)
+func (uc *gitRepoUsecase) fetchAndReconcileCommits(ctx context.Context, repo domain.RepoMetadata) {
+	log.Info().Msgf("Resume fetching and reconciling commits for repo: %s", repo.Name)
 	page := repo.LastFetchedPage
 
 	lastFetchedCommit := repo.LastFetchedCommit
@@ -195,7 +195,7 @@ func (uc *gitRepoUsecase) fetchAndSaveCommits(ctx context.Context, repo domain.R
 	for {
 		select {
 		case <-ctx.Done():
-			log.Warn().Msgf("Git repository [%s] fetchAndSaveCommits service stopped", repo.Name)
+			log.Warn().Msgf("Git repository [%s] fetchAndReconcileCommits service stopped", repo.Name)
 			return
 		default:
 			commits, morePages, err := uc.gitClient.FetchCommits(ctx, repo, uc.config.DefaultStartDate, until, lastFetchedCommit, int(page), uc.config.GitCommitFetchPerPage)
