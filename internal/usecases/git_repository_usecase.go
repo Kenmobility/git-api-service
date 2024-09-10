@@ -10,7 +10,7 @@ import (
 	"github.com/kenmobility/git-api-service/common/message"
 	"github.com/kenmobility/git-api-service/infra/config"
 	"github.com/kenmobility/git-api-service/infra/git"
-	"github.com/kenmobility/git-api-service/internal/domains"
+	"github.com/kenmobility/git-api-service/internal/domain"
 	"github.com/kenmobility/git-api-service/internal/http/dtos"
 	"github.com/kenmobility/git-api-service/internal/repository"
 	"github.com/rs/zerolog/log"
@@ -103,7 +103,7 @@ func (uc *gitRepoUsecase) StartIndexing(ctx context.Context, input dtos.AddRepos
 	return &repoDto, nil
 }
 
-func (uc *gitRepoUsecase) startFetchingAndSavingCommits(ctx context.Context, repo domains.RepoMetadata) {
+func (uc *gitRepoUsecase) startFetchingAndSavingCommits(ctx context.Context, repo domain.RepoMetadata) {
 	page := repo.LastFetchedPage
 	lastFetchedCommit := ""
 	log.Info().Msgf("fetching commits for repo: %s, starting from page-%d", repo.Name, page)
@@ -160,7 +160,7 @@ func (uc *gitRepoUsecase) ResumeFetching(ctx context.Context) error {
 	return nil
 }
 
-func (uc *gitRepoUsecase) startPeriodicFetching(ctx context.Context, repo domains.RepoMetadata) error {
+func (uc *gitRepoUsecase) startPeriodicFetching(ctx context.Context, repo domain.RepoMetadata) error {
 	log.Info().Msgf("Commits periodic fetching started for repo %v", repo.Name)
 	ticker := time.NewTicker(uc.config.FetchInterval)
 	defer ticker.Stop()
@@ -184,7 +184,7 @@ func (uc *gitRepoUsecase) startPeriodicFetching(ctx context.Context, repo domain
 	}
 }
 
-func (uc *gitRepoUsecase) fetchAndSaveCommits(ctx context.Context, repo domains.RepoMetadata) {
+func (uc *gitRepoUsecase) fetchAndSaveCommits(ctx context.Context, repo domain.RepoMetadata) {
 	log.Info().Msgf("Resume fetching commits for repo: %s", repo.Name)
 	page := repo.LastFetchedPage
 

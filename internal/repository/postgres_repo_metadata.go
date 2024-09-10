@@ -3,7 +3,7 @@ package repository
 import (
 	"time"
 
-	"github.com/kenmobility/git-api-service/internal/domains"
+	"github.com/kenmobility/git-api-service/internal/domain"
 )
 
 // Repository represents the Postgres model for the repositories table.
@@ -26,8 +26,8 @@ type Repository struct {
 }
 
 // ToDomain converts a PostgresRepository to a generic domain entity RepoMetadata.
-func (pr *Repository) ToDomain() *domains.RepoMetadata {
-	return &domains.RepoMetadata{
+func (pr *Repository) ToDomain() *domain.RepoMetadata {
+	return &domain.RepoMetadata{
 		PublicID:          pr.PublicID,
 		Name:              pr.Name,
 		Description:       pr.Description,
@@ -46,7 +46,7 @@ func (pr *Repository) ToDomain() *domains.RepoMetadata {
 }
 
 // FromDomain creates a PostgresRepository from a generic domain entity RepoMetadata.
-func FromDomainRepo(r *domains.RepoMetadata) *Repository {
+func FromDomainRepo(r *domain.RepoMetadata) *Repository {
 	return &Repository{
 		PublicID:          r.PublicID,
 		Name:              r.Name,
