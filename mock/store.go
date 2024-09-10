@@ -13,7 +13,7 @@ import (
 	context "context"
 	reflect "reflect"
 
-	domains "github.com/kenmobility/git-api-service/internal/domains"
+	domain "github.com/kenmobility/git-api-service/internal/domain"
 	dtos "github.com/kenmobility/git-api-service/internal/http/dtos"
 	gomock "go.uber.org/mock/gomock"
 )
@@ -42,7 +42,7 @@ func (m *MockStore) EXPECT() *MockStoreMockRecorder {
 }
 
 // AllCommitsByRepository mocks base method.
-func (m *MockStore) AllCommitsByRepository(arg0 context.Context, arg1 domains.RepoMetadata, arg2 dtos.APIPagingDto) (*dtos.AllCommitsResponse, error) {
+func (m *MockStore) AllCommitsByRepository(arg0 context.Context, arg1 domain.RepoMetadata, arg2 dtos.APIPagingDto) (*dtos.AllCommitsResponse, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AllCommitsByRepository", arg0, arg1, arg2)
 	ret0, _ := ret[0].(*dtos.AllCommitsResponse)
@@ -57,10 +57,10 @@ func (mr *MockStoreMockRecorder) AllCommitsByRepository(arg0, arg1, arg2 any) *g
 }
 
 // AllRepoMetadata mocks base method.
-func (m *MockStore) AllRepoMetadata(arg0 context.Context) ([]domains.RepoMetadata, error) {
+func (m *MockStore) AllRepoMetadata(arg0 context.Context) ([]domain.RepoMetadata, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AllRepoMetadata", arg0)
-	ret0, _ := ret[0].([]domains.RepoMetadata)
+	ret0, _ := ret[0].([]domain.RepoMetadata)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -72,10 +72,10 @@ func (mr *MockStoreMockRecorder) AllRepoMetadata(arg0 any) *gomock.Call {
 }
 
 // RepoMetadataByName mocks base method.
-func (m *MockStore) RepoMetadataByName(arg0 context.Context, arg1 string) (*domains.RepoMetadata, error) {
+func (m *MockStore) RepoMetadataByName(arg0 context.Context, arg1 string) (*domain.RepoMetadata, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RepoMetadataByName", arg0, arg1)
-	ret0, _ := ret[0].(*domains.RepoMetadata)
+	ret0, _ := ret[0].(*domain.RepoMetadata)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -87,10 +87,10 @@ func (mr *MockStoreMockRecorder) RepoMetadataByName(arg0, arg1 any) *gomock.Call
 }
 
 // RepoMetadataByPublicId mocks base method.
-func (m *MockStore) RepoMetadataByPublicId(arg0 context.Context, arg1 string) (*domains.RepoMetadata, error) {
+func (m *MockStore) RepoMetadataByPublicId(arg0 context.Context, arg1 string) (*domain.RepoMetadata, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RepoMetadataByPublicId", arg0, arg1)
-	ret0, _ := ret[0].(*domains.RepoMetadata)
+	ret0, _ := ret[0].(*domain.RepoMetadata)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -102,10 +102,10 @@ func (mr *MockStoreMockRecorder) RepoMetadataByPublicId(arg0, arg1 any) *gomock.
 }
 
 // SaveCommit mocks base method.
-func (m *MockStore) SaveCommit(arg0 context.Context, arg1 domains.Commit) (*domains.Commit, error) {
+func (m *MockStore) SaveCommit(arg0 context.Context, arg1 domain.Commit) (*domain.Commit, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SaveCommit", arg0, arg1)
-	ret0, _ := ret[0].(*domains.Commit)
+	ret0, _ := ret[0].(*domain.Commit)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -117,10 +117,10 @@ func (mr *MockStoreMockRecorder) SaveCommit(arg0, arg1 any) *gomock.Call {
 }
 
 // SaveRepoMetadata mocks base method.
-func (m *MockStore) SaveRepoMetadata(arg0 context.Context, arg1 domains.RepoMetadata) (*domains.RepoMetadata, error) {
+func (m *MockStore) SaveRepoMetadata(arg0 context.Context, arg1 domain.RepoMetadata) (*domain.RepoMetadata, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SaveRepoMetadata", arg0, arg1)
-	ret0, _ := ret[0].(*domains.RepoMetadata)
+	ret0, _ := ret[0].(*domain.RepoMetadata)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -132,7 +132,7 @@ func (mr *MockStoreMockRecorder) SaveRepoMetadata(arg0, arg1 any) *gomock.Call {
 }
 
 // TopCommitAuthorsByRepository mocks base method.
-func (m *MockStore) TopCommitAuthorsByRepository(arg0 context.Context, arg1 domains.RepoMetadata, arg2 int) ([]string, error) {
+func (m *MockStore) TopCommitAuthorsByRepository(arg0 context.Context, arg1 domain.RepoMetadata, arg2 int) ([]string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "TopCommitAuthorsByRepository", arg0, arg1, arg2)
 	ret0, _ := ret[0].([]string)
@@ -147,10 +147,10 @@ func (mr *MockStoreMockRecorder) TopCommitAuthorsByRepository(arg0, arg1, arg2 a
 }
 
 // UpdateRepoMetadata mocks base method.
-func (m *MockStore) UpdateRepoMetadata(arg0 context.Context, arg1 domains.RepoMetadata) (*domains.RepoMetadata, error) {
+func (m *MockStore) UpdateRepoMetadata(arg0 context.Context, arg1 domain.RepoMetadata) (*domain.RepoMetadata, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateRepoMetadata", arg0, arg1)
-	ret0, _ := ret[0].(*domains.RepoMetadata)
+	ret0, _ := ret[0].(*domain.RepoMetadata)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

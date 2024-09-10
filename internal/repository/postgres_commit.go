@@ -3,7 +3,7 @@ package repository
 import (
 	"time"
 
-	"github.com/kenmobility/git-api-service/internal/domains"
+	"github.com/kenmobility/git-api-service/internal/domain"
 )
 
 // Commit represents the GORM model for the commits table.
@@ -20,8 +20,8 @@ type Commit struct {
 }
 
 // ToDomain converts a PostgresCommit to a generic domain entity Commit.
-func (pc *Commit) ToDomain() *domains.Commit {
-	return &domains.Commit{
+func (pc *Commit) ToDomain() *domain.Commit {
+	return &domain.Commit{
 		CommitID:       pc.CommitID,
 		Message:        pc.Message,
 		Author:         pc.Author,
@@ -32,7 +32,7 @@ func (pc *Commit) ToDomain() *domains.Commit {
 }
 
 // FromDomain creates a PostgresCommit from a generic domain entity Commit.
-func FromDomainCommit(c *domains.Commit) *Commit {
+func FromDomainCommit(c *domain.Commit) *Commit {
 	return &Commit{
 		CommitID:       c.CommitID,
 		Message:        c.Message,

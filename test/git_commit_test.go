@@ -2,6 +2,4 @@ package test
 
 import "testing"
 
-func TestSaveCommits(t *testing.T) {
-
-}
+func TestSaveCommits(t *testing.T) {}

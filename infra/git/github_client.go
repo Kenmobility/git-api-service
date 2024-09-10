@@ -12,7 +12,7 @@ import (
 
 	"github.com/kenmobility/git-api-service/common/client"
 	"github.com/kenmobility/git-api-service/common/message"
-	"github.com/kenmobility/git-api-service/internal/domains"
+	"github.com/kenmobility/git-api-service/internal/domain"
 	"github.com/rs/zerolog/log"
 )
 
@@ -50,7 +50,7 @@ func NewGitHubClient(baseUrl string, token string, fetchInterval time.Duration) 
 	return ts
 }
 
-func (g *GitHubClient) FetchRepoMetadata(ctx context.Context, repositoryName string) (*domains.RepoMetadata, error) {
+func (g *GitHubClient) FetchRepoMetadata(ctx context.Context, repositoryName string) (*domain.RepoMetadata, error) {
 	endpoint := fmt.Sprintf("%s/repos/%s", g.baseURL, repositoryName)
 
 	resp, err := g.client.Get(endpoint)
@@ -69,7 +69,7 @@ func (g *GitHubClient) FetchRepoMetadata(ctx context.Context, repositoryName str
 		return nil, errors.New("could not unmarshal repo metadata response")
 	}
 
-	repoMetadata := &domains.RepoMetadata{
+	repoMetadata := &domain.RepoMetadata{
 		Name:            gitHubRepoResponse.FullName,
 		Description:     gitHubRepoResponse.Description,
 		URL:             gitHubRepoResponse.Url,
@@ -83,7 +83,7 @@ func (g *GitHubClient) FetchRepoMetadata(ctx context.Context, repositoryName str
 	return repoMetadata, nil
 }
 
-func (g *GitHubClient) FetchCommits(ctx context.Context, repo domains.RepoMetadata, since time.Time, until time.Time, lastFetchedCommit string, page, perPage int) ([]domains.Commit, bool, error) {
+func (g *GitHubClient) FetchCommits(ctx context.Context, repo domain.RepoMetadata, since time.Time, until time.Time, lastFetchedCommit string, page, perPage int) ([]domain.Commit, bool, error) {
 	var endpoint string
 
 	if lastFetchedCommit != "" {
@@ -121,9 +121,9 @@ func (g *GitHubClient) FetchCommits(ctx context.Context, repo domains.RepoMetada
 		return nil, false, errors.New("could not unmarshal commits response")
 	}
 
-	var cc []domains.Commit
+	var cc []domain.Commit
 	for _, cr := range commitRes {
-		commit := domains.Commit{
+		commit := domain.Commit{
 			CommitID:       cr.SHA,
 			Message:        cr.Commit.Message,
 			Author:         cr.Commit.Author.Name,

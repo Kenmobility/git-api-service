@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/kenmobility/git-api-service/internal/domains"
+	"github.com/kenmobility/git-api-service/internal/domain"
 	"github.com/kenmobility/git-api-service/internal/http/dtos"
 	"github.com/rs/zerolog/log"
 	"gorm.io/gorm"
@@ -21,13 +21,13 @@ func NewPostgresGitCommitRepository(db *gorm.DB) CommitRepository {
 }
 
 // SaveCommit stores a repository commit into the database
-func (gc *PostgresGitCommitRepository) SaveCommit(ctx context.Context, commit domains.Commit) (*domains.Commit, error) {
+func (gc *PostgresGitCommitRepository) SaveCommit(ctx context.Context, commit domain.Commit) (*domain.Commit, error) {
 	err := gc.DB.WithContext(ctx).Create(&commit).Error
 	return &commit, err
 }
 
 // GetAllCommitsByRepositoryName fetches all stores commits by repository name
-func (gc *PostgresGitCommitRepository) AllCommitsByRepository(ctx context.Context, repo domains.RepoMetadata, query dtos.APIPagingDto) (*dtos.AllCommitsResponse, error) {
+func (gc *PostgresGitCommitRepository) AllCommitsByRepository(ctx context.Context, repo domain.RepoMetadata, query dtos.APIPagingDto) (*dtos.AllCommitsResponse, error) {
 	var dbCommits []Commit
 
 	var count, queryCount int64
@@ -59,9 +59,9 @@ func (gc *PostgresGitCommitRepository) AllCommitsByRepository(ctx context.Contex
 
 }
 
-func (gc *PostgresGitCommitRepository) TopCommitAuthorsByRepository(ctx context.Context, repo domains.RepoMetadata, limit int) ([]string, error) {
+func (gc *PostgresGitCommitRepository) TopCommitAuthorsByRepository(ctx context.Context, repo domain.RepoMetadata, limit int) ([]string, error) {
 	var authors []string
-	err := gc.DB.WithContext(ctx).Model(&domains.Commit{}).
+	err := gc.DB.WithContext(ctx).Model(&domain.Commit{}).
 		Select("author").
 		Where("repository_name = ?", repo.Name).
 		Group("author").
