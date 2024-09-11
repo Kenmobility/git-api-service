@@ -42,18 +42,20 @@ func (gc *PostgresGitCommitRepository) SaveCommit(ctx context.Context, commit do
 		return nil, message.ErrContextCancelled
 	}
 
-	tx := gc.DB.WithContext(ctx).Create(&commit)
+	dbCommit := FromDomainCommit(&commit)
+
+	tx := gc.DB.WithContext(ctx).Create(&dbCommit)
 
 	if tx.Error != nil {
 		if strings.Contains(tx.Error.Error(), `duplicate key value violates unique constraint "idx_commits_commit_id"`) {
 			log.Warn().Msgf("already saved commit-id:%s", commit.CommitID)
-			return &commit, nil
+			return nil, tx.Error
 		} else {
 			log.Info().Msgf("getting the save commit error and returning it")
 		}
-		return &commit, tx.Error
+		return nil, tx.Error
 	}
-	return &commit, nil
+	return dbCommit.ToDomain(), nil
 }
 
 // GetAllCommitsByRepositoryName fetches all stores commits by repository name
@@ -90,7 +92,6 @@ func (gc *PostgresGitCommitRepository) AllCommitsByRepository(ctx context.Contex
 }
 
 func (gc *PostgresGitCommitRepository) TopCommitAuthorsByRepository(ctx context.Context, repo domain.RepoMetadata, limit int) ([]dtos.AuthorCommitCount, error) {
-	//var authors []string
 	var results []dtos.AuthorCommitCount
 	err := gc.DB.WithContext(ctx).Model(&domain.Commit{}).
 		Select("author, COUNT(author) as commit_count").
