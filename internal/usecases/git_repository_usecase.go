@@ -16,10 +16,11 @@ import (
 )
 
 type GitRepositoryUsecase interface {
-	AddRepository(ctx context.Context, input dtos.AddRepositoryRequestDto) (*dtos.GitRepoMetadataResponseDto, error)
-	GetRepositoryById(ctx context.Context, repoId string) (*dtos.GitRepoMetadataResponseDto, error)
-	GellAllRepositories(ctx context.Context) ([]dtos.GitRepoMetadataResponseDto, error)
+	StartIndexing(ctx context.Context, input dtos.AddRepositoryRequestDto) (*dtos.GitRepoMetadataResponseDto, error)
+	GetById(ctx context.Context, repoId string) (*dtos.GitRepoMetadataResponseDto, error)
+	GellAll(ctx context.Context) ([]dtos.GitRepoMetadataResponseDto, error)
 	ResumeFetching(ctx context.Context) error
+	UpdateFetchingStatusForAllRepositories(ctx context.Context, status bool) error
 }
 
 type gitRepoUsecase struct {
@@ -39,7 +40,7 @@ func NewGitRepositoryUsecase(repoMetadataRepo repository.RepoMetadataRepository,
 	}
 }
 
-func (uc *gitRepoUsecase) GetRepositoryById(ctx context.Context, repoId string) (*dtos.GitRepoMetadataResponseDto, error) {
+func (uc *gitRepoUsecase) GetById(ctx context.Context, repoId string) (*dtos.GitRepoMetadataResponseDto, error) {
 	repo, err := uc.repoMetadataRepository.RepoMetadataByPublicId(ctx, repoId)
 	if err != nil {
 		return nil, err
@@ -50,7 +51,7 @@ func (uc *gitRepoUsecase) GetRepositoryById(ctx context.Context, repoId string) 
 	return &repoDto, nil
 }
 
-func (uc *gitRepoUsecase) GellAllRepositories(ctx context.Context) ([]dtos.GitRepoMetadataResponseDto, error) {
+func (uc *gitRepoUsecase) GellAll(ctx context.Context) ([]dtos.GitRepoMetadataResponseDto, error) {
 	repos, err := uc.repoMetadataRepository.AllRepoMetadata(ctx)
 	if err != nil {
 		return nil, err
@@ -63,7 +64,7 @@ func (uc *gitRepoUsecase) GellAllRepositories(ctx context.Context) ([]dtos.GitRe
 	return repoDtoResponse, nil
 }
 
-func (uc *gitRepoUsecase) AddRepository(ctx context.Context, input dtos.AddRepositoryRequestDto) (*dtos.GitRepoMetadataResponseDto, error) {
+func (uc *gitRepoUsecase) StartIndexing(ctx context.Context, input dtos.AddRepositoryRequestDto) (*dtos.GitRepoMetadataResponseDto, error) {
 	//validate repository name to ensure it has owner and repo name
 	if !helpers.IsRepositoryNameValid(input.Name) {
 		return nil, message.ErrInvalidRepositoryName
@@ -79,7 +80,6 @@ func (uc *gitRepoUsecase) AddRepository(ctx context.Context, input dtos.AddRepos
 		return nil, message.ErrRepoAlreadyAdded
 	}
 
-	// try fetching repo meta data from GitManagerClient to ensure repository with such name exists
 	repoMetadata, err := uc.gitClient.FetchRepoMetadata(ctx, input.Name)
 	if err != nil {
 		return nil, err
@@ -89,32 +89,29 @@ func (uc *gitRepoUsecase) AddRepository(ctx context.Context, input dtos.AddRepos
 	repoMetadata.PublicID = uuid.New().String()
 	repoMetadata.CreatedAt = time.Now()
 	repoMetadata.UpdatedAt = time.Now()
+	repoMetadata.IsFetching = true
 
 	sRepoMetadata, err := uc.repoMetadataRepository.SaveRepoMetadata(ctx, *repoMetadata)
 	if err != nil {
 		return nil, err
 	}
 
-	// Start fetching commits for the new added repository in a new goroutine
-	go uc.startFetchingRepositoryCommits(ctx, *sRepoMetadata)
+	// Start fetching commits for the new added repository in a goroutine
+	go uc.startFetchingAndSavingCommits(ctx, *sRepoMetadata)
 
 	repoDto := sRepoMetadata.ToDto()
 
 	return &repoDto, nil
 }
 
-func (uc *gitRepoUsecase) startFetchingRepositoryCommits(ctx context.Context, repo domain.RepoMetadata) {
-	ticker := time.NewTicker(uc.config.FetchInterval)
-	defer ticker.Stop()
-
+func (uc *gitRepoUsecase) startFetchingAndSavingCommits(ctx context.Context, repo domain.RepoMetadata) {
 	page := repo.LastFetchedPage
 	lastFetchedCommit := ""
-
-	for range ticker.C {
-		// Fetch commits for the repository
+	log.Info().Msgf("fetching commits for repo: %s, starting from page-%d", repo.Name, page)
+	for {
 		commits, morePages, err := uc.gitClient.FetchCommits(ctx, repo, uc.config.DefaultStartDate, uc.config.DefaultEndDate, "", int(page), uc.config.GitCommitFetchPerPage)
 		if err != nil {
-			log.Info().Msgf("Failed to fetch commits for repository %s: %v", repo.Name, err)
+			log.Err(err).Msgf("Failed to fetch commits for repository %s: %v", repo.Name, err)
 			continue
 		}
 
@@ -122,7 +119,8 @@ func (uc *gitRepoUsecase) startFetchingRepositoryCommits(ctx context.Context, re
 		for _, commit := range commits {
 			_, err := uc.commitRepository.SaveCommit(ctx, commit)
 			if err != nil {
-				log.Info().Msgf("failed to save commitId - %s for repository %s: %v", commit.CommitID, repo.Name, err)
+				log.Err(err).Msgf("error saving commit-id:%s for repo %s", commit.CommitID, repo.Name)
+				continue
 			}
 			lastFetchedCommit = commit.CommitID
 		}
@@ -132,11 +130,17 @@ func (uc *gitRepoUsecase) startFetchingRepositoryCommits(ctx context.Context, re
 		repo.LastFetchedPage = page
 		_, err = uc.repoMetadataRepository.UpdateRepoMetadata(ctx, repo)
 		if err != nil {
-			log.Info().Msgf("Error updating repository %s: %v", repo.Name, err)
+			log.Debug().Msgf("Error updating repository %s: %v", repo.Name, err)
 			continue
 		}
 
 		if !morePages {
+			// update isFetching to false as flag for start of monitoring
+			repo.IsFetching = false
+			_, err = uc.repoMetadataRepository.UpdateRepoMetadata(ctx, repo)
+			if err != nil {
+				log.Err(err).Msgf("Error updating isFetching column of repository %s: %v", repo.Name, err)
+			}
 			break
 		}
 		page++
@@ -151,92 +155,97 @@ func (uc *gitRepoUsecase) ResumeFetching(ctx context.Context) error {
 		return err
 	}
 	log.Info().Msgf("Saved repos %v", repos)
-
 	for _, repo := range repos {
-		// Start fetching commits from the last fetched commit
 		go uc.startPeriodicFetching(ctx, repo)
 	}
 	return nil
 }
 
 func (uc *gitRepoUsecase) startPeriodicFetching(ctx context.Context, repo domain.RepoMetadata) error {
-	log.Info().Msgf("Commits periodic fetching started for repo %v", repo.Name)
 	ticker := time.NewTicker(uc.config.FetchInterval)
 	defer ticker.Stop()
-
-	// Initial fetch to start immediately
-	//uc.fetchCommits(ctx, repo)
 
 	for {
 		select {
 		case <-ctx.Done():
+			log.Warn().Msgf("Git repository [%s] commits monitoring service stopped", repo.Name)
 			return ctx.Err()
 		case <-ticker.C:
 			r, err := uc.repoMetadataRepository.RepoMetadataByPublicId(ctx, repo.PublicID)
 			if err != nil {
-				log.Err(err).Msgf("error getting repo metadata for last fetched page")
-				r = &repo
+				log.Debug().Msgf("error getting repo metadata for monitoring: %v", err)
+				return err
 			}
-			uc.fetchCommits(ctx, *r)
+			if !r.IsFetching {
+				log.Info().Msgf("Commits periodic fetching started for repo %v", repo.Name)
+				uc.fetchAndReconcileCommits(ctx, *r)
+			}
 		}
 	}
 }
 
-func (uc *gitRepoUsecase) fetchCommits(ctx context.Context, repo domain.RepoMetadata) {
-	log.Info().Msgf("fetch commits for repo: %s", repo.Name)
+func (uc *gitRepoUsecase) fetchAndReconcileCommits(ctx context.Context, repo domain.RepoMetadata) {
+	log.Info().Msgf("Resume fetching and reconciling commits for repo: %s", repo.Name)
 	page := repo.LastFetchedPage
-
-	repo.IsFetching = true
-	uc.repoMetadataRepository.UpdateRepoMetadata(ctx, repo) // Mark as fetching in the DB
-
-	defer func() {
-		repo.IsFetching = false
-		uc.repoMetadataRepository.UpdateRepoMetadata(ctx, repo) // Mark as not fetching when done
-	}()
 
 	lastFetchedCommit := repo.LastFetchedCommit
 
 	until := uc.config.DefaultEndDate
 
 	for {
-		commits, morePages, err := uc.gitClient.FetchCommits(ctx, repo, uc.config.DefaultStartDate, until, lastFetchedCommit, int(page), uc.config.GitCommitFetchPerPage)
-		if err != nil {
-			log.Error().Msgf("Error fetching commits for repo %s: %v", repo.Name, err)
+		select {
+		case <-ctx.Done():
+			log.Warn().Msgf("Git repository [%s] fetchAndReconcileCommits service stopped", repo.Name)
 			return
-		}
-
-		if len(commits) == 0 {
-			log.Error().Msgf("No new commits for repo %s", repo.Name)
-			//reset the page to ensure no commits data is missed within range
-			page = 1
-			continue
-		}
-
-		for _, commit := range commits {
-			c, err := uc.commitRepository.SaveCommit(ctx, commit)
+		default:
+			commits, morePages, err := uc.gitClient.FetchCommits(ctx, repo, uc.config.DefaultStartDate, until, lastFetchedCommit, int(page), uc.config.GitCommitFetchPerPage)
 			if err != nil {
-				log.Error().Msgf("Error saving commit for repo %s: %v", repo.Name, err)
+				log.Error().Msgf("Error fetching commits for repo %s: %v", repo.Name, err)
 				return
 			}
-			lastFetchedCommit = c.CommitID
+
+			if len(commits) == 0 {
+				log.Warn().Msgf("No new commits for repo %s, resetting page to 1", repo.Name)
+				page = 1               //reset the page
+				lastFetchedCommit = "" //don't use sha endpoint
+				continue
+			}
+
+			for _, commit := range commits {
+				_, err = uc.commitRepository.GetByCommitID(ctx, commit.CommitID)
+				if err != nil && err != message.ErrNoRecordFound && err != message.ErrContextCancelled {
+					log.Err(err).Msgf("error getting commit by commit-id:%s", commit.CommitID)
+				}
+				if err == message.ErrNoRecordFound {
+					_, err := uc.commitRepository.SaveCommit(ctx, commit)
+					if err != nil {
+						log.Err(err).Msgf("error saving commit-id:%s for repo %s", commit.CommitID, repo.Name)
+						continue
+					}
+					lastFetchedCommit = commit.CommitID
+				}
+			}
+
+			repo.LastFetchedCommit = lastFetchedCommit
+			repo.LastFetchedPage = page
+			_, err = uc.repoMetadataRepository.UpdateRepoMetadata(ctx, repo)
+			if err != nil && err != message.ErrContextCancelled {
+				log.Debug().Msgf("Error updating repository %s: %v", repo.Name, err)
+				return
+			}
+
+			if !morePages {
+				log.Info().Msgf("no more page to fech for repo: %s", repo.Name)
+				break
+			}
+
+			page++
+
+			until = time.Now()
 		}
-
-		// Update the repository's last fetched commit
-		repo.LastFetchedCommit = lastFetchedCommit
-		repo.LastFetchedPage = page
-		_, err = uc.repoMetadataRepository.UpdateRepoMetadata(ctx, repo)
-		if err != nil {
-			log.Error().Msgf("Error updating repository %s: %v", repo.Name, err)
-			return
-		}
-
-		if !morePages {
-			log.Info().Msgf("no more page to fech for repo: %s", repo.Name)
-			break
-		}
-
-		page++
-
-		until = time.Now()
 	}
+}
+
+func (uc *gitRepoUsecase) UpdateFetchingStatusForAllRepositories(ctx context.Context, status bool) error {
+	return uc.repoMetadataRepository.UpdateFetchingStateForAllRepos(ctx, status)
 }

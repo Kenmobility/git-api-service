@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/kenmobility/git-api-service/common/message"
@@ -23,7 +26,7 @@ import (
 func main() {
 	// Configures system wide Logger object
 	log.Logger = zerolog.New(os.Stderr).With().Timestamp().Caller().Logger()
-	// make it human-readable, only locally
+	// make logger human-readable, only locally
 	if os.Getenv("APP_ENV") == "" {
 		log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr}).With().Caller().Logger()
 	}
@@ -34,40 +37,35 @@ func main() {
 		log.Fatal().Msgf("failed to load config %v, (%v)", err.Error(), err.Error())
 	}
 
-	// Initialize Database Client
-	dbClient := database.NewPostgresDatabase(*config)
-
 	// establish database connection
+	dbClient := database.NewPostgresDatabase(*config)
 	db, err := dbClient.ConnectDb()
 	if err != nil {
 		log.Fatal().Msgf("failed to establish postgres database connection: %v, (%v)", err.Error(), err.Error())
 	}
 
-	// Run migrations
+	// Run database migrations
 	if err := dbClient.Migrate(db); err != nil {
 		log.Fatal().Msgf("failed to run database migrations: %v, (%v)", err.Error(), err.Error())
 	}
 
-	// Initialize repositories
+	// Initialize various layers
 	commitRepository := repository.NewPostgresGitCommitRepository(db)
 	repoMetadataRepository := repository.NewPostgresGitRepoMetadataRepository(db)
 
-	// Initialize Git Manager Client
 	gitClient := git.NewGitHubClient(config.GitHubApiBaseURL, config.GitHubToken, config.FetchInterval)
 
-	// Initialize use cases and handlers
 	gitCommitUsecase := usecases.NewManageGitCommitUsecase(commitRepository, repoMetadataRepository)
 	gitRepositoryUsecase := usecases.NewGitRepositoryUsecase(repoMetadataRepository, commitRepository, gitClient, *config)
 
-	//seed and set 'chromium/chromium' repo as default repository if not seeded
+	commitHandler := handlers.NewCommitHandler(gitCommitUsecase)
+	repositoryHandler := handlers.NewRepositoryHandler(gitRepositoryUsecase)
+
+	//seed default repo
 	err = seedDefaultRepository(config, gitRepositoryUsecase)
 	if err != nil && err != message.ErrRepoAlreadyAdded {
 		log.Fatal().Msgf("failed to seed default repository: %v, (%v)", err.Error(), err.Error())
 	}
-
-	// Initialize handlers
-	commitHandler := handlers.NewCommitHandler(gitCommitUsecase)
-	repositoryHandler := handlers.NewRepositoryHandler(gitRepositoryUsecase)
 
 	ginEngine := gin.Default()
 
@@ -80,26 +78,41 @@ func main() {
 		Handler: ginEngine,
 	}
 
-	// create a context with cancellation to gracefully shut down Git commits monitoring if server shuts down
-	ctx, cancelFunc := context.WithCancel(context.Background())
-	defer cancelFunc()
+	// Handle graceful shutdown
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
 
 	// Resume repo commits fetching for all saved repositories
 	go gitRepositoryUsecase.ResumeFetching(ctx)
 
-	// start web server
+	go func() {
+		for {
+			select {
+			case <-ctx.Done():
+				log.Warn().Msg("Program is shutting down...")
+				// Call method to set isFetching to false in DB
+				if err := gitRepositoryUsecase.UpdateFetchingStatusForAllRepositories(context.Background(), false); err != nil {
+					log.Err(err).Msgf("Error updating isFetching to false: %v", err)
+				}
+				os.Exit(0)
+			default:
+				time.Sleep(5 * time.Second)
+			}
+		}
+	}()
+
 	if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 		log.Fatal().Msgf("listen: %v, (%v)\n", err.Error(), err.Error())
 	}
 	log.Info().Msgf("Git API Service is listening on address %s", server.Addr)
 }
 
-// seedDefaultRepository seeds a default chromium repo
+// seedDefaultRepository seeds a default repository to database
 func seedDefaultRepository(config *config.Config, repositoryUsecase usecases.GitRepositoryUsecase) error {
 	defaultRepo := dtos.AddRepositoryRequestDto{
 		Name: config.DefaultRepository,
 	}
-	repo, err := repositoryUsecase.AddRepository(context.Background(), defaultRepo)
+	repo, err := repositoryUsecase.StartIndexing(context.Background(), defaultRepo)
 	if err != nil && err != message.ErrNoRecordFound {
 		return err
 	}

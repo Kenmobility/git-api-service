@@ -12,4 +12,5 @@ type RepoMetadataRepository interface {
 	RepoMetadataByPublicId(ctx context.Context, publicId string) (*domain.RepoMetadata, error)
 	RepoMetadataByName(ctx context.Context, name string) (*domain.RepoMetadata, error)
 	AllRepoMetadata(ctx context.Context) ([]domain.RepoMetadata, error)
+	UpdateFetchingStateForAllRepos(ctx context.Context, isFetching bool) error
 }

@@ -36,7 +36,7 @@ func (rh RepositoryHandlers) AddRepository(ctx *gin.Context) {
 		return
 	}
 
-	repo, err := rh.gitRepositoryUsecase.AddRepository(ctx, input)
+	repo, err := rh.gitRepositoryUsecase.StartIndexing(ctx, input)
 	if err != nil {
 		if err == message.ErrRepoAlreadyAdded {
 			response.Failure(ctx, http.StatusBadRequest, err.Error(), err.Error())
@@ -50,7 +50,7 @@ func (rh RepositoryHandlers) AddRepository(ctx *gin.Context) {
 }
 
 func (rh RepositoryHandlers) FetchAllRepositories(ctx *gin.Context) {
-	repos, err := rh.gitRepositoryUsecase.GellAllRepositories(ctx)
+	repos, err := rh.gitRepositoryUsecase.GellAll(ctx)
 	if err != nil {
 		response.Failure(ctx, http.StatusInternalServerError, err.Error(), err)
 		return
@@ -70,7 +70,7 @@ func (rh RepositoryHandlers) FetchRepository(ctx *gin.Context) {
 		return
 	}
 
-	repo, err := rh.gitRepositoryUsecase.GetRepositoryById(ctx, repositoryId)
+	repo, err := rh.gitRepositoryUsecase.GetById(ctx, repositoryId)
 	if err != nil {
 		if err == message.ErrNoRecordFound {
 			response.Failure(ctx, http.StatusBadRequest, message.ErrInvalidRepositoryId.Error(), message.ErrInvalidRepositoryId.Error())

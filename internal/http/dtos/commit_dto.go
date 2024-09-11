@@ -19,3 +19,9 @@ type CommitResponseDto struct {
 	CreatedAt  time.Time `json:"created_at"`
 	UpdatedAt  time.Time `json:"updated_at"`
 }
+
+// AuthorCommitCount holds the result with author and count of commits
+type AuthorCommitCount struct {
+	Author      string `json:"author"`
+	CommitCount int    `json:"commit_count"`
+}

@@ -34,7 +34,9 @@ func NewPostgresDatabase(config config.Config) Database {
 
 // ConnectDb establishes a database connection or error if not successful
 func (p *PostgresDatabase) ConnectDb() (*gorm.DB, error) {
-	db, err := gorm.Open(postgres.Open(p.DSN), &gorm.Config{})
+	db, err := gorm.Open(postgres.Open(p.DSN), &gorm.Config{
+		//Logger: logger.Default.LogMode(logger.Info),
+	})
 	if err != nil {
 		log.Info().Msgf("failed to connect to postgres database: %v", err)
 

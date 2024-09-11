@@ -21,29 +21,16 @@ cp .env.example .env
 ```
 
 ## 3. Set environmental variables:
-- the duplicated .env.example file already has default variables that the program needs to run except for GIT_HUB_TOKEN env variable (feel free to change the values).
-- go to [https://github.com/](GitHub) to set up a GitHub API token (i.e Personal access token) and set value for the GIT_HUB_TOKEN env variable.
+- the duplicated .env.example file already has default variables that the program needs to run except for GIT_HUB_TOKEN env variable.
+- The program can run without GIT_HUB_TOKEN variable, but with a rate limit of just 60 requests within a time frame, but to extend the rate limit to 5000 requests, a valid GitHub token should be added to the .env file. 
+- (OPTIONAL) Go to [https://github.com/](GitHub) to set up a GitHub API token (i.e Personal access token) and set the value for the GIT_HUB_TOKEN environmental variable on the .env file.
 
 - (OPTIONAL) if the default values of the DATABASE_HOST, DATABASE_PORT, DATABASE_USER, DATABASE_PASSWORD or DATABASE_NAME in .env file were altered, ensure that the 'make postgres' command in the makefile matches the new set values.
-  ```bash
-  postgres: 
-	  docker run --name github-api-hex-db-con -p {DATABASE_PORT}:5432 -e POSTGRES_USER={DATABASE_USER} -e POSTGRES_PASSWORD={DATABASE_PASSWORD} -d postgres:14-alpine
-  ```
 
 ## 4 Open Docker desktop application
 - Ensure that docker desktop is started and running on your machine 
 
-## 5. Attempt to stop and remove postgreSQL container by name
-- run 'docker stop github-api-hex-db-con' to attempt stopping the container if it exists and running.
-```bash
-docker stop github-api-hex-db-con
-``` 
-- run 'docker rm github-api-hex-db-con' to try removal of the container if it exists to ensure that the container name for postgreSQL does not exist.
-```bash
-docker rm github-api-hex-db-con
-``` 
-
-## 6. Run makefile commands 
+## 5. Run makefile commands 
 - run 'make postgres' to pull and run PostgreSQL instance as docker container
 ```bash
 make postgres
@@ -52,20 +39,13 @@ make postgres
 ```bash
 make createdb
 ```
-
-## 7. Unit Testing
-
-Run 'make test' to run the unit tests:
-```bash
-make test
-```
-## 8. Start web server
+## 6. Start web server
 - run 'make server' to start the service
 ```bash
 make server
 ```
 
-## 9. Endpoint requests
+## 7. Endpoint requests
 - POST application/json Request to add a new repository
 ``` 
 curl -d '{"name": "GoogleChrome/chromium-dashboard"}'\
@@ -96,4 +76,17 @@ curl -L \
 curl -L \
   -X GET http://127.0.0.1:5000/repos/5846c0f0-81f5-45e3-9d4a-cfc6fe4f176a/top-authors?limit=5 \
 ```
-  
+
+## Clean Slate: Removing Database
+- To remove all the data (droping the database) run 'make dropdb' to delete the database, ensure program isn't running and database isn't openned in any database client e.g pgAdmin or TablePlus, etc
+```bash
+make dropdb
+```
+- Then run 'make createdb' to recreate the database before restarting the program with 'make server'
+```bash
+make createdb
+```
+- Then run 'make server' to rerun database migrations (recreate all tables, seeds default repo) and starts program
+```bash
+make server
+```
