@@ -19,22 +19,7 @@ func NewPostgresGitRepoMetadataRepository(db *gorm.DB) RepoMetadataRepository {
 
 func (r *PostgresGitRepoMetadataRepository) SaveRepoMetadata(ctx context.Context, repo domain.RepoMetadata) (*domain.RepoMetadata, error) {
 	dbRepository := FromDomainRepo(&repo)
-	/*
-		dbRepository := Repository{
-			PublicID:        repo.PublicID,
-			Name:            repo.Name,
-			Description:     repo.Description,
-			URL:             repo.URL,
-			Language:        repo.Language,
-			ForksCount:      repo.ForksCount,
-			StarsCount:      repo.StarsCount,
-			OpenIssuesCount: repo.OpenIssuesCount,
-			WatchersCount:   repo.WatchersCount,
-			IsFetching:      repo.IsFetching,
-			CreatedAt:       repo.CreatedAt,
-			UpdatedAt:       repo.UpdatedAt,
-		}
-	*/
+
 	err := r.DB.WithContext(ctx).Create(dbRepository).Error
 	if err != nil {
 		return nil, err

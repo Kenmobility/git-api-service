@@ -7,6 +7,8 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/joho/godotenv v1.5.1
 	github.com/rs/zerolog v1.33.0
+	github.com/stretchr/testify v1.9.0
+	go.uber.org/mock v0.4.0
 	gopkg.in/go-playground/validator.v9 v9.31.0
 	gorm.io/driver/postgres v1.5.9
 	gorm.io/gorm v1.25.11

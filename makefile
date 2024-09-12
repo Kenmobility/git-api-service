@@ -12,6 +12,12 @@ dropdb:
 test:
 	go test -v ./...
 
+mockstore:
+	mockgen -package mocks -destination mocks/store.go github.com/kenmobility/git-api-service/test Store
+
+mockgit:
+	mockgen -package mocks -destination mocks/mock_git_manager_client.go github.com/kenmobility/git-api-service/infra/git GitManagerClient
+
 server: 
 	go run cmd/main.go
 

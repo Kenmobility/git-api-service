@@ -13,6 +13,11 @@ import (
 
 const alphabet = "abcdefghijklmnopqrstuvwxyz"
 
+// RandomInt generates a random integer between min and max
+func RandomInt(min, max int64) int64 {
+	return min + rand.Int63n(max-min+1)
+}
+
 // IsLocal returns true or false depending on APP_ENV environmental variable's value
 func IsLocal() bool {
 	return os.Getenv("APP_ENV") == "" || os.Getenv("APP_ENV") == "local"
