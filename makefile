@@ -12,14 +12,13 @@ dropdb:
 test:
 	go test -v ./...
 
-mock:
-	mockgen -package mockdb -destination mock/store.go github.com/kenmobility/git-api-service/test Store
+mockstore:
+	mockgen -package mocks -destination mocks/store.go github.com/kenmobility/git-api-service/test Store
+
+mockgit:
+	mockgen -package mocks -destination mocks/mock_git_manager_client.go github.com/kenmobility/git-api-service/infra/git GitManagerClient
 
 server: 
 	go run cmd/main.go
 
-<<<<<<< HEAD
-.PHONY: postgres createdb dropdb migrate test mock server
-=======
 .PHONY: postgres createdb dropdb test server
->>>>>>> main

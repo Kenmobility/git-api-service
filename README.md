@@ -39,13 +39,20 @@ make postgres
 ```bash
 make createdb
 ```
-## 6. Start web server
+
+## 6. Unit Testing
+Run 'make test' to run the unit tests:
+```bash
+make test
+```
+
+## 7. Start web server
 - run 'make server' to start the service
 ```bash
 make server
 ```
 
-## 7. Endpoint requests
+## 8. Endpoint requests
 - POST application/json Request to add a new repository
 ``` 
 curl -d '{"name": "GoogleChrome/chromium-dashboard"}'\
