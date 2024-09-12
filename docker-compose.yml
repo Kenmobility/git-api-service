@@ -1,0 +1,35 @@
+services:
+   db:
+      image: postgres:14-alpine
+      environment:
+         - POSTGRES_USER=${DATABASE_USER}
+         - POSTGRES_PASSWORD=${DATABASE_PASSWORD}
+         - POSTGRES_DB=${DATABASE_NAME}
+      env_file:
+         - .env
+      volumes:
+         - pgdata:/var/lib/postgresql/data
+      healthcheck:
+         test: [ "CMD-SHELL", "pg_isready -d ${DATABASE_NAME} -U ${DATABASE_USER}" ]
+         interval: 10s
+         timeout: 5s
+         retries: 5
+      ports:
+         - 5432:5432     
+      restart: on-failure
+
+   api:
+      build: .
+      restart: on-failure
+      ports:
+         - "8080:5000"
+      env_file:
+         - .env
+      depends_on:
+         db:
+            condition: service_healthy
+networks:
+  learning:
+    driver: bridge
+volumes:
+  pgdata:
