@@ -97,14 +97,14 @@ func (uc *gitRepoUsecase) StartIndexing(ctx context.Context, input dtos.AddRepos
 	}
 
 	// Start fetching commits for the new added repository in a goroutine
-	go uc.startFetchingAndSavingCommits(ctx, *sRepoMetadata)
+	go uc.startRepoIndexing(ctx, *sRepoMetadata)
 
 	repoDto := sRepoMetadata.ToDto()
 
 	return &repoDto, nil
 }
 
-func (uc *gitRepoUsecase) startFetchingAndSavingCommits(ctx context.Context, repo domain.RepoMetadata) {
+func (uc *gitRepoUsecase) startRepoIndexing(ctx context.Context, repo domain.RepoMetadata) {
 	page := repo.LastFetchedPage
 	lastFetchedCommit := ""
 	log.Info().Msgf("fetching commits for repo: %s, starting from page-%d", repo.Name, page)
