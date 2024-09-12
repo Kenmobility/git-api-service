@@ -18,6 +18,9 @@ git clone https://github.com/kenmobility/git-api-service.git
 ```bash
 cd git-api-service
 ```
+```bash
+go mod tidy
+```
 
 ## 2. Unit Testing
 Run 'make test' to run the unit tests:
