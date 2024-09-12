@@ -27,7 +27,7 @@ func main() {
 	// Configures system wide Logger object
 	log.Logger = zerolog.New(os.Stderr).With().Timestamp().Caller().Logger()
 	// make logger human-readable, only locally
-	if os.Getenv("APP_ENV") == "" {
+	if os.Getenv("APP_ENV") == "local" {
 		log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr}).With().Caller().Logger()
 	}
 
