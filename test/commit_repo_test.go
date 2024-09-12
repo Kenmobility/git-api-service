@@ -23,9 +23,10 @@ func TestSaveCommitRepo(t *testing.T) {
 		Times(1).
 		Return(&commitData, nil)
 
-	_, err := store.SaveCommit(context.Background(), commitData)
+	sCommit, err := store.SaveCommit(context.Background(), commitData)
 
 	require.NoError(t, err)
+	require.Equal(t, "sample/repo", sCommit.RepositoryName)
 }
 
 func randomCommitdata() domain.Commit {

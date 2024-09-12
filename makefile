@@ -21,4 +21,4 @@ mockgit:
 server: 
 	go run cmd/main.go
 
-.PHONY: postgres createdb dropdb test server
+.PHONY: postgres createdb dropdb test mockstore mockgit server

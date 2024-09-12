@@ -32,12 +32,15 @@ type Config struct {
 func LoadConfig(path string) (*Config, error) {
 	var err error
 
-	if path == "" {
-		path = ".env"
-	}
-	if err := godotenv.Load(path); err != nil {
-		log.Error().Msgf("env config error: %v", err)
-		return nil, err
+	// Skip .env loading if in testing environment
+	if os.Getenv("APP_ENV") != "test" {
+		if path == "" {
+			path = ".env"
+		}
+		if err := godotenv.Load(path); err != nil {
+			log.Error().Msgf("env config error: %v", err)
+			return nil, err
+		}
 	}
 
 	interval := os.Getenv("FETCH_INTERVAL")
