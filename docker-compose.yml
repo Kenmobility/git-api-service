@@ -17,19 +17,23 @@ services:
       ports:
          - 5432:5432     
       restart: on-failure
+      networks:
+         - git-service-network
 
    api:
       build: .
       restart: on-failure
       ports:
-         - "8080:5000"
+         - "8080:8080"
       env_file:
          - .env
+      networks:
+         - git-service-network
       depends_on:
          db:
             condition: service_healthy
 networks:
-  learning:
+  git-service-network:
     driver: bridge
 volumes:
   pgdata:

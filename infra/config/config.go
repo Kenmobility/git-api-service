@@ -99,8 +99,8 @@ func LoadConfig(path string) (*Config, error) {
 		DefaultEndDate:        eDate,
 		GitCommitFetchPerPage: commitPerPage,
 		GitHubApiBaseURL:      os.Getenv("GITHUB_API_BASE_URL"),
-		Address:               helpers.Getenv("ADDRESS", "127.0.0.1"),
-		Port:                  helpers.Getenv("PORT", "5000"),
+		Address:               helpers.Getenv("ADDRESS", "0.0.0.0"),
+		Port:                  helpers.Getenv("PORT", "8080"),
 		DefaultRepository:     helpers.Getenv("DEFAULT_REPOSITORY", "chromium/chromium"),
 	}
 

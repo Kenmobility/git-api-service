@@ -42,31 +42,31 @@ make
 ``` 
 curl -d '{"name": "GoogleChrome/chromium-dashboard"}'\
   -H "Content-Type: application/json" \
-  -X POST http://127.0.0.1:5000/repository \
+  -X POST http://localhost:8080/repository \
 ```
 
 - GET Request to fetch all the repositories on the database
 ```
 curl -L \
-  -X GET http://127.0.0.1:5000/repositories \
+  -X GET http://localhost:8080/repositories \
 ```
 
 - GET Request to fetch all the commits fetched from github API for any repo using repository Id 
 ```
 curl \
-  -X GET http://127.0.0.1:5000/repos/5846c0f0-81f5-45e3-9d4a-cfc6fe4f176a/commits \
+  -X GET http://localhost:8080/repos/5846c0f0-81f5-45e3-9d4a-cfc6fe4f176a/commits \
 ```
 
 - GET Request to get repository metadata using repository id. 
 ``` 
 curl -L \
-  -X GET http://127.0.0.1:5000/repository/5846c0f0-81f5-45e3-9d4a-cfc6fe4f176a \
+  -X GET http://localhost:8080/repository/5846c0f0-81f5-45e3-9d4a-cfc6fe4f176a \
 ```
 
 - GET Request to fetch N (as limit) top commit authors of the any added repository using its repository id with limit as query param, if limit is not passed, a defualt limit of 10 is used.
 ```
 curl -L \
-  -X GET http://127.0.0.1:5000/repos/5846c0f0-81f5-45e3-9d4a-cfc6fe4f176a/top-authors?limit=5 \
+  -X GET http://localhost:8080/repos/5846c0f0-81f5-45e3-9d4a-cfc6fe4f176a/top-authors?limit=5 \
 ```
 
 ## Clean Slate: 
