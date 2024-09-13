@@ -44,7 +44,7 @@ func main() {
 	}
 
 	// Run database migrations
-	if err := dbClient.Migrate(db); err != nil {
+	if err := dbClient.Migrate(); err != nil {
 		log.Fatal().Msgf("failed to run database migrations: %v, (%v)", err.Error(), err.Error())
 	}
 

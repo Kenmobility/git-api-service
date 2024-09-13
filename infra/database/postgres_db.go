@@ -13,6 +13,7 @@ import (
 
 type PostgresDatabase struct {
 	DSN string
+	db  *gorm.DB
 }
 
 func NewPostgresDatabase(config config.Config) Database {
@@ -34,7 +35,8 @@ func NewPostgresDatabase(config config.Config) Database {
 
 // ConnectDb establishes a postgreSQL database connection or error if not successful
 func (p *PostgresDatabase) ConnectDb() (*gorm.DB, error) {
-	db, err := gorm.Open(postgres.Open(p.DSN), &gorm.Config{
+	var err error
+	p.db, err = gorm.Open(postgres.Open(p.DSN), &gorm.Config{
 		//Logger: logger.Default.LogMode(logger.Info),
 	})
 	if err != nil {
@@ -42,11 +44,11 @@ func (p *PostgresDatabase) ConnectDb() (*gorm.DB, error) {
 
 		return nil, err
 	}
-	return db, nil
+	return p.db, nil
 }
 
 // Migrate does db schema migration for PostgreSQL
-func (p *PostgresDatabase) Migrate(db *gorm.DB) error {
+func (p *PostgresDatabase) Migrate() error {
 	// Migrate the schema for PostgreSQL
-	return db.AutoMigrate(&postgreSQL.Repository{}, &postgreSQL.Commit{})
+	return p.db.AutoMigrate(&postgreSQL.Repository{}, &postgreSQL.Commit{})
 }
