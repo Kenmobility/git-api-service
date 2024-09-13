@@ -13,7 +13,6 @@ import (
 	"github.com/kenmobility/git-api-service/infra/config"
 	"github.com/kenmobility/git-api-service/infra/database"
 	"github.com/kenmobility/git-api-service/infra/git"
-	"github.com/kenmobility/git-api-service/internal/http/dtos"
 	"github.com/kenmobility/git-api-service/internal/http/handlers"
 	"github.com/kenmobility/git-api-service/internal/http/routes"
 	"github.com/kenmobility/git-api-service/internal/repository/postgres"
@@ -109,10 +108,7 @@ func main() {
 
 // seedDefaultRepository seeds a default repository to database
 func seedDefaultRepository(config *config.Config, repositoryUsecase usecases.GitRepositoryUsecase) error {
-	defaultRepo := dtos.AddRepositoryRequestDto{
-		Name: config.DefaultRepository,
-	}
-	repo, err := repositoryUsecase.StartIndexing(context.Background(), defaultRepo)
+	repo, err := repositoryUsecase.StartIndexing(context.Background(), config.DefaultRepository)
 	if err != nil && err != message.ErrNoRecordFound {
 		return err
 	}

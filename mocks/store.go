@@ -41,7 +41,7 @@ func (m *MockStore) EXPECT() *MockStoreMockRecorder {
 }
 
 // AllCommitsByRepository mocks base method.
-func (m *MockStore) AllCommitsByRepository(arg0 context.Context, arg1 domain.RepoMetadata, arg2 domain.APIPaging) ([]domain.Commit, *domain.PagingInfo, error) {
+func (m *MockStore) AllCommitsByRepository(arg0 context.Context, arg1 domain.RepoMetadata, arg2 domain.APIPagingData) ([]domain.Commit, *domain.PagingInfo, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AllCommitsByRepository", arg0, arg1, arg2)
 	ret0, _ := ret[0].([]domain.Commit)

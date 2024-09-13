@@ -59,7 +59,7 @@ func (gc *PostgresGitCommitRepository) SaveCommit(ctx context.Context, commit do
 }
 
 // AllCommitsByRepository fetches all stores commits by repository name
-func (gc *PostgresGitCommitRepository) AllCommitsByRepository(ctx context.Context, r domain.RepoMetadata, query domain.APIPaging) ([]domain.Commit, *domain.PagingInfo, error) {
+func (gc *PostgresGitCommitRepository) AllCommitsByRepository(ctx context.Context, r domain.RepoMetadata, query domain.APIPagingData) ([]domain.Commit, *domain.PagingInfo, error) {
 	var dbCommits []Commit
 
 	var count, queryCount int64
@@ -81,7 +81,7 @@ func (gc *PostgresGitCommitRepository) AllCommitsByRepository(ctx context.Contex
 		return nil, nil, db.Error
 	}
 
-	pagingInfo := repository.GetPagingInfo(queryInfo, int(count))
+	pagingInfo := repository.PagingInfo(queryInfo, int(count))
 	pagingInfo.Count = len(dbCommits)
 
 	return domainCommits(dbCommits), &pagingInfo, nil

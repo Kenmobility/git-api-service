@@ -8,7 +8,6 @@ import (
 	"github.com/kenmobility/git-api-service/infra/config"
 	"github.com/kenmobility/git-api-service/infra/git"
 	"github.com/kenmobility/git-api-service/internal/domain"
-	"github.com/kenmobility/git-api-service/internal/http/dtos"
 	"github.com/kenmobility/git-api-service/internal/repository"
 	"github.com/kenmobility/git-api-service/pkg/helpers"
 	"github.com/kenmobility/git-api-service/pkg/message"
@@ -16,9 +15,9 @@ import (
 )
 
 type GitRepositoryUsecase interface {
-	StartIndexing(ctx context.Context, input dtos.AddRepositoryRequestDto) (*dtos.GitRepoMetadataResponseDto, error)
-	GetById(ctx context.Context, repoId string) (*dtos.GitRepoMetadataResponseDto, error)
-	GellAll(ctx context.Context) ([]dtos.GitRepoMetadataResponseDto, error)
+	StartIndexing(ctx context.Context, repositoryName string) (*domain.RepoMetadata, error)
+	GetById(ctx context.Context, repoId string) (*domain.RepoMetadata, error)
+	GellAll(ctx context.Context) ([]domain.RepoMetadata, error)
 	ResumeFetching(ctx context.Context) error
 	UpdateFetchingStatusForAllRepositories(ctx context.Context, status bool) error
 }
@@ -40,38 +39,34 @@ func NewGitRepositoryUsecase(repoMetadataRepo repository.RepoMetadataRepository,
 	}
 }
 
-func (uc *gitRepoUsecase) GetById(ctx context.Context, repoId string) (*dtos.GitRepoMetadataResponseDto, error) {
+func (uc *gitRepoUsecase) GetById(ctx context.Context, repoId string) (*domain.RepoMetadata, error) {
 	repo, err := uc.repoMetadataRepository.RepoMetadataByPublicId(ctx, repoId)
 	if err != nil {
 		return nil, err
 	}
 
-	repoDto := repo.ToDto()
-
-	return &repoDto, nil
+	return repo, nil
 }
 
-func (uc *gitRepoUsecase) GellAll(ctx context.Context) ([]dtos.GitRepoMetadataResponseDto, error) {
+func (uc *gitRepoUsecase) GellAll(ctx context.Context) ([]domain.RepoMetadata, error) {
 	repos, err := uc.repoMetadataRepository.AllRepoMetadata(ctx)
 	if err != nil {
 		return nil, err
 	}
-	repoDtoResponse := make([]dtos.GitRepoMetadataResponseDto, 0, len(repos))
-	for _, repo := range repos {
-		repoDtoResponse = append(repoDtoResponse, repo.ToDto())
-	}
+	repoDtoResponse := make([]domain.RepoMetadata, 0, len(repos))
+	repoDtoResponse = append(repoDtoResponse, repos...)
 
 	return repoDtoResponse, nil
 }
 
-func (uc *gitRepoUsecase) StartIndexing(ctx context.Context, input dtos.AddRepositoryRequestDto) (*dtos.GitRepoMetadataResponseDto, error) {
+func (uc *gitRepoUsecase) StartIndexing(ctx context.Context, repositoryName string) (*domain.RepoMetadata, error) {
 	//validate repository name to ensure it has owner and repo name
-	if !helpers.IsRepositoryNameValid(input.Name) {
+	if !helpers.IsRepositoryNameValid(repositoryName) {
 		return nil, message.ErrInvalidRepositoryName
 	}
 
 	// ensure repo does not exist on the db
-	repo, err := uc.repoMetadataRepository.RepoMetadataByName(ctx, input.Name)
+	repo, err := uc.repoMetadataRepository.RepoMetadataByName(ctx, repositoryName)
 	if err != nil && err != message.ErrNoRecordFound {
 		return nil, err
 	}
@@ -80,7 +75,7 @@ func (uc *gitRepoUsecase) StartIndexing(ctx context.Context, input dtos.AddRepos
 		return nil, message.ErrRepoAlreadyAdded
 	}
 
-	repoMetadata, err := uc.gitClient.FetchRepoMetadata(ctx, input.Name)
+	repoMetadata, err := uc.gitClient.FetchRepoMetadata(ctx, repositoryName)
 	if err != nil {
 		return nil, err
 	}
@@ -99,9 +94,9 @@ func (uc *gitRepoUsecase) StartIndexing(ctx context.Context, input dtos.AddRepos
 	// Start fetching commits for the new added repository in a goroutine
 	go uc.startRepoIndexing(ctx, *sRepoMetadata)
 
-	repoDto := sRepoMetadata.ToDto()
+	//repoDto := sRepoMetadata.ToDto()
 
-	return &repoDto, nil
+	return sRepoMetadata, nil
 }
 
 func (uc *gitRepoUsecase) startRepoIndexing(ctx context.Context, repo domain.RepoMetadata) {

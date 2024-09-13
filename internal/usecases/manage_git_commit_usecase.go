@@ -9,7 +9,7 @@ import (
 )
 
 type ManageGitCommitUsecase interface {
-	GetAllCommitsByRepository(ctx context.Context, repoId string, query domain.APIPaging) (*string, []domain.Commit, *domain.PagingInfo, error)
+	GetAllCommitsByRepository(ctx context.Context, repoId string, query domain.APIPagingData) (*string, []domain.Commit, *domain.PagingInfo, error)
 	GetTopRepositoryCommitAuthors(ctx context.Context, repoId string, limit int) (*string, []domain.AuthorCommitCount, error)
 }
 
@@ -25,7 +25,7 @@ func NewManageGitCommitUsecase(commitRepo repository.CommitRepository, repoMetad
 	}
 }
 
-func (uc *manageGitCommitUsecase) GetAllCommitsByRepository(ctx context.Context, repoId string, query domain.APIPaging) (*string, []domain.Commit, *domain.PagingInfo, error) {
+func (uc *manageGitCommitUsecase) GetAllCommitsByRepository(ctx context.Context, repoId string, query domain.APIPagingData) (*string, []domain.Commit, *domain.PagingInfo, error) {
 	repoMetaData, err := uc.repoMetadataRepository.RepoMetadataByPublicId(ctx, repoId)
 	if err != nil {
 		return nil, nil, nil, err

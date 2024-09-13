@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/kenmobility/git-api-service/internal/domain"
 	"github.com/kenmobility/git-api-service/internal/http/dtos"
 	"github.com/kenmobility/git-api-service/internal/usecases"
 	"github.com/kenmobility/git-api-service/pkg/message"
@@ -32,7 +31,7 @@ func (ch CommitHandlers) GetCommitsByRepositoryId(ctx *gin.Context) {
 		return
 	}
 
-	repoName, commits, pagingInfo, err := ch.manageGitCommitUsecase.GetAllCommitsByRepository(ctx, repositoryId, domain.FromDtoPaging(query))
+	repoName, commits, pagingInfo, err := ch.manageGitCommitUsecase.GetAllCommitsByRepository(ctx, repositoryId, dtos.PagingDataFromPagingDto(query))
 	if err != nil {
 		if err == message.ErrNoRecordFound {
 			response.Failure(ctx, http.StatusBadRequest, message.ErrInvalidRepositoryId.Error(), message.ErrInvalidRepositoryId.Error())
@@ -48,9 +47,9 @@ func (ch CommitHandlers) GetCommitsByRepositoryId(ctx *gin.Context) {
 		return
 	}
 
-	commitsResp := dtos.AllCommitsResponse{
-		Commits:  domain.CommitsResponse(commits),
-		PageInfo: pagingInfo.ToDto(),
+	commitsResp := dtos.AllCommitResponse{
+		Commits:  dtos.CommitsResponse(commits),
+		PageInfo: dtos.PagingInfoResponse(*pagingInfo),
 	}
 
 	msg := fmt.Sprintf("%s repository commits fetched successfully", *repoName)
@@ -82,5 +81,5 @@ func (ch CommitHandlers) GetTopCommitAuthors(ctx *gin.Context) {
 
 	msg := fmt.Sprintf("%v top commit authors of %s repository fetched successfully", len(authors), *repoName)
 
-	response.Success(ctx, http.StatusOK, msg, domain.AuthorsCommitCountResponse(authors))
+	response.Success(ctx, http.StatusOK, msg, dtos.AllAuthorCommitCountResponse(authors))
 }

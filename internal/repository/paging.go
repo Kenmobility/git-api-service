@@ -11,7 +11,7 @@ const (
 	PageDefaultSortDirectionDesc = "desc"
 )
 
-func GetQueryPaginationData(query domain.APIPaging) (domain.APIPaging, int) {
+func GetQueryPaginationData(query domain.APIPagingData) (domain.APIPagingData, int) {
 	var offset int
 	// load defaults
 	if query.Page == 0 {
@@ -35,7 +35,7 @@ func GetQueryPaginationData(query domain.APIPaging) (domain.APIPaging, int) {
 	return query, offset
 }
 
-func GetPagingInfo(query domain.APIPaging, count int) domain.PagingInfo {
+func PagingInfo(query domain.APIPagingData, count int) domain.PagingInfo {
 	var hasNextPage bool
 
 	next := int64((query.Page * query.Limit) - count)

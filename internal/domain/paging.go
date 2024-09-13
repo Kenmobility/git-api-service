@@ -1,9 +1,7 @@
 package domain
 
-import "github.com/kenmobility/git-api-service/internal/http/dtos"
-
 type (
-	APIPaging struct {
+	APIPagingData struct {
 		Limit     int
 		Page      int
 		Sort      string
@@ -17,30 +15,3 @@ type (
 		Count       int
 	}
 )
-
-func (p APIPaging) ToDto() dtos.APIPagingDto {
-	return dtos.APIPagingDto{
-		Limit:     p.Limit,
-		Page:      p.Page,
-		Sort:      p.Sort,
-		Direction: p.Direction,
-	}
-}
-
-func (p PagingInfo) ToDto() dtos.PagingInfo {
-	return dtos.PagingInfo{
-		TotalCount:  p.TotalCount,
-		Page:        p.Page,
-		HasNextPage: p.HasNextPage,
-		Count:       p.Count,
-	}
-}
-
-func FromDtoPaging(query dtos.APIPagingDto) APIPaging {
-	return APIPaging{
-		Limit:     query.Limit,
-		Page:      query.Page,
-		Sort:      query.Sort,
-		Direction: query.Direction,
-	}
-}

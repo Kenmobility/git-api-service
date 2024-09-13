@@ -36,17 +36,23 @@ func (rh RepositoryHandlers) AddRepository(ctx *gin.Context) {
 		return
 	}
 
-	repo, err := rh.gitRepositoryUsecase.StartIndexing(ctx, input)
+	repo, err := rh.gitRepositoryUsecase.StartIndexing(ctx, input.Name)
 	if err != nil {
 		if err == message.ErrRepoAlreadyAdded {
 			response.Failure(ctx, http.StatusBadRequest, err.Error(), err.Error())
 			return
 		}
+
+		if err == message.ErrRateLimitExceeded {
+			response.Failure(ctx, http.StatusForbidden, err.Error(), err.Error())
+			return
+		}
+
 		response.Failure(ctx, http.StatusInternalServerError, err.Error(), err.Error())
 		return
 	}
 
-	response.Success(ctx, http.StatusCreated, "Repository successfully indexed, its commits are being fetched...", repo)
+	response.Success(ctx, http.StatusCreated, "Repository successfully indexed, its commits are being fetched...", dtos.RepoMetadataResponse(*repo))
 }
 
 func (rh RepositoryHandlers) FetchAllRepositories(ctx *gin.Context) {
@@ -60,7 +66,9 @@ func (rh RepositoryHandlers) FetchAllRepositories(ctx *gin.Context) {
 		response.Success(ctx, http.StatusOK, "no repository indexed yet", repos)
 		return
 	}
-	response.Success(ctx, http.StatusOK, "successfully fetched all repos", repos)
+
+	repositoriesResp := dtos.AllRepoMetadataResponse(repos)
+	response.Success(ctx, http.StatusOK, "successfully fetched all repos", repositoriesResp)
 }
 
 func (rh RepositoryHandlers) FetchRepository(ctx *gin.Context) {
@@ -80,5 +88,5 @@ func (rh RepositoryHandlers) FetchRepository(ctx *gin.Context) {
 		return
 	}
 
-	response.Success(ctx, http.StatusOK, "successfully fetched repository", repo)
+	response.Success(ctx, http.StatusOK, "successfully fetched repository", dtos.RepoMetadataResponse(*repo))
 }

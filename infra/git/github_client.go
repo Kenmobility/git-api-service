@@ -61,6 +61,10 @@ func (g *GitHubClient) FetchRepoMetadata(ctx context.Context, repositoryName str
 		return nil, err
 	}
 
+	if resp.StatusCode == http.StatusForbidden {
+		return nil, message.ErrRateLimitExceeded
+	}
+
 	if resp.StatusCode != http.StatusOK {
 		return nil, message.ErrRepoMetaDataNotFetched
 	}
