@@ -94,8 +94,6 @@ func (uc *gitRepoUsecase) StartIndexing(ctx context.Context, repositoryName stri
 	// Start fetching commits for the new added repository in a goroutine
 	go uc.startRepoIndexing(ctx, *sRepoMetadata)
 
-	//repoDto := sRepoMetadata.ToDto()
-
 	return sRepoMetadata, nil
 }
 
