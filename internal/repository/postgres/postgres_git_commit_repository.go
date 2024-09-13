@@ -1,13 +1,13 @@
-package repository
+package postgres
 
 import (
 	"context"
 	"fmt"
 	"strings"
 
-	"github.com/kenmobility/git-api-service/common/message"
 	"github.com/kenmobility/git-api-service/internal/domain"
-	"github.com/kenmobility/git-api-service/internal/http/dtos"
+	"github.com/kenmobility/git-api-service/internal/repository"
+	"github.com/kenmobility/git-api-service/pkg/message"
 	"github.com/rs/zerolog/log"
 	"gorm.io/gorm"
 )
@@ -16,7 +16,7 @@ type PostgresGitCommitRepository struct {
 	DB *gorm.DB
 }
 
-func NewPostgresGitCommitRepository(db *gorm.DB) CommitRepository {
+func NewPostgresGitCommitRepository(db *gorm.DB) repository.CommitRepository {
 	return &PostgresGitCommitRepository{
 		DB: db,
 	}
@@ -58,15 +58,15 @@ func (gc *PostgresGitCommitRepository) SaveCommit(ctx context.Context, commit do
 	return dbCommit.ToDomain(), nil
 }
 
-// GetAllCommitsByRepositoryName fetches all stores commits by repository name
-func (gc *PostgresGitCommitRepository) AllCommitsByRepository(ctx context.Context, repo domain.RepoMetadata, query dtos.APIPagingDto) (*dtos.AllCommitsResponse, error) {
+// AllCommitsByRepository fetches all stores commits by repository name
+func (gc *PostgresGitCommitRepository) AllCommitsByRepository(ctx context.Context, r domain.RepoMetadata, query domain.APIPagingData) ([]domain.Commit, *domain.PagingInfo, error) {
 	var dbCommits []Commit
 
 	var count, queryCount int64
 
-	queryInfo, offset := getPaginationInfo(query)
+	queryInfo, offset := repository.GetQueryPaginationData(query)
 
-	db := gc.DB.WithContext(ctx).Model(&Commit{}).Where(&Commit{RepositoryName: repo.Name})
+	db := gc.DB.WithContext(ctx).Model(&Commit{}).Where(&Commit{RepositoryName: r.Name})
 
 	db.Count(&count)
 
@@ -78,21 +78,17 @@ func (gc *PostgresGitCommitRepository) AllCommitsByRepository(ctx context.Contex
 	if db.Error != nil {
 		log.Info().Msgf("fetch commits error %v", db.Error.Error())
 
-		return nil, db.Error
+		return nil, nil, db.Error
 	}
 
-	pagingInfo := getPagingInfo(queryInfo, int(count))
+	pagingInfo := repository.PagingInfo(queryInfo, int(count))
 	pagingInfo.Count = len(dbCommits)
 
-	return &dtos.AllCommitsResponse{
-		Commits:  commitResponse(dbCommits),
-		PageInfo: pagingInfo,
-	}, nil
-
+	return domainCommits(dbCommits), &pagingInfo, nil
 }
 
-func (gc *PostgresGitCommitRepository) TopCommitAuthorsByRepository(ctx context.Context, repo domain.RepoMetadata, limit int) ([]dtos.AuthorCommitCount, error) {
-	var results []dtos.AuthorCommitCount
+func (gc *PostgresGitCommitRepository) TopCommitAuthorsByRepository(ctx context.Context, repo domain.RepoMetadata, limit int) ([]domain.AuthorCommitCount, error) {
+	var results []domain.AuthorCommitCount
 	err := gc.DB.WithContext(ctx).Model(&domain.Commit{}).
 		Select("author, COUNT(author) as commit_count").
 		Where("repository_name = ?", repo.Name).
@@ -104,27 +100,27 @@ func (gc *PostgresGitCommitRepository) TopCommitAuthorsByRepository(ctx context.
 	return results, err
 }
 
-func commitResponse(commits []Commit) []dtos.CommitResponseDto {
-	if len(commits) == 0 {
+func domainCommits(dbCommits []Commit) []domain.Commit {
+	if len(dbCommits) == 0 {
 		return nil
 	}
 
-	commitsResponse := make([]dtos.CommitResponseDto, 0, len(commits))
+	domainCommits := make([]domain.Commit, 0, len(dbCommits))
 
-	for _, c := range commits {
-		cr := dtos.CommitResponseDto{
-			CommitID:   c.CommitID,
-			Message:    c.Message,
-			Author:     c.Author,
-			Date:       c.Date,
-			URL:        c.URL,
-			Repository: c.RepositoryName,
-			CreatedAt:  c.CreatedAt,
-			UpdatedAt:  c.UpdatedAt,
+	for _, c := range dbCommits {
+		cr := domain.Commit{
+			CommitID:       c.CommitID,
+			Message:        c.Message,
+			Author:         c.Author,
+			Date:           c.Date,
+			URL:            c.URL,
+			RepositoryName: c.RepositoryName,
+			CreatedAt:      c.CreatedAt,
+			UpdatedAt:      c.UpdatedAt,
 		}
 
-		commitsResponse = append(commitsResponse, cr)
+		domainCommits = append(domainCommits, cr)
 	}
 
-	return commitsResponse
+	return domainCommits
 }

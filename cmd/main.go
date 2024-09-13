@@ -10,15 +10,14 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/kenmobility/git-api-service/common/message"
 	"github.com/kenmobility/git-api-service/infra/config"
 	"github.com/kenmobility/git-api-service/infra/database"
 	"github.com/kenmobility/git-api-service/infra/git"
-	"github.com/kenmobility/git-api-service/internal/http/dtos"
 	"github.com/kenmobility/git-api-service/internal/http/handlers"
 	"github.com/kenmobility/git-api-service/internal/http/routes"
-	"github.com/kenmobility/git-api-service/internal/repository"
+	"github.com/kenmobility/git-api-service/internal/repository/postgres"
 	"github.com/kenmobility/git-api-service/internal/usecases"
+	"github.com/kenmobility/git-api-service/pkg/message"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
@@ -45,13 +44,13 @@ func main() {
 	}
 
 	// Run database migrations
-	if err := dbClient.Migrate(db); err != nil {
+	if err := dbClient.Migrate(); err != nil {
 		log.Fatal().Msgf("failed to run database migrations: %v, (%v)", err.Error(), err.Error())
 	}
 
 	// Initialize various layers
-	commitRepository := repository.NewPostgresGitCommitRepository(db)
-	repoMetadataRepository := repository.NewPostgresGitRepoMetadataRepository(db)
+	commitRepository := postgres.NewPostgresGitCommitRepository(db)
+	repoMetadataRepository := postgres.NewPostgresGitRepoMetadataRepository(db)
 
 	gitClient := git.NewGitHubClient(config.GitHubApiBaseURL, config.GitHubToken, config.FetchInterval)
 
@@ -109,10 +108,7 @@ func main() {
 
 // seedDefaultRepository seeds a default repository to database
 func seedDefaultRepository(config *config.Config, repositoryUsecase usecases.GitRepositoryUsecase) error {
-	defaultRepo := dtos.AddRepositoryRequestDto{
-		Name: config.DefaultRepository,
-	}
-	repo, err := repositoryUsecase.StartIndexing(context.Background(), defaultRepo)
+	repo, err := repositoryUsecase.StartIndexing(context.Background(), config.DefaultRepository)
 	if err != nil && err != message.ErrNoRecordFound {
 		return err
 	}

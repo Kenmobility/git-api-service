@@ -14,7 +14,6 @@ import (
 	reflect "reflect"
 
 	domain "github.com/kenmobility/git-api-service/internal/domain"
-	dtos "github.com/kenmobility/git-api-service/internal/http/dtos"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -42,12 +41,13 @@ func (m *MockStore) EXPECT() *MockStoreMockRecorder {
 }
 
 // AllCommitsByRepository mocks base method.
-func (m *MockStore) AllCommitsByRepository(arg0 context.Context, arg1 domain.RepoMetadata, arg2 dtos.APIPagingDto) (*dtos.AllCommitsResponse, error) {
+func (m *MockStore) AllCommitsByRepository(arg0 context.Context, arg1 domain.RepoMetadata, arg2 domain.APIPagingData) ([]domain.Commit, *domain.PagingInfo, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AllCommitsByRepository", arg0, arg1, arg2)
-	ret0, _ := ret[0].(*dtos.AllCommitsResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret0, _ := ret[0].([]domain.Commit)
+	ret1, _ := ret[1].(*domain.PagingInfo)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
 }
 
 // AllCommitsByRepository indicates an expected call of AllCommitsByRepository.
@@ -147,10 +147,10 @@ func (mr *MockStoreMockRecorder) SaveRepoMetadata(arg0, arg1 any) *gomock.Call {
 }
 
 // TopCommitAuthorsByRepository mocks base method.
-func (m *MockStore) TopCommitAuthorsByRepository(arg0 context.Context, arg1 domain.RepoMetadata, arg2 int) ([]dtos.AuthorCommitCount, error) {
+func (m *MockStore) TopCommitAuthorsByRepository(arg0 context.Context, arg1 domain.RepoMetadata, arg2 int) ([]domain.AuthorCommitCount, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "TopCommitAuthorsByRepository", arg0, arg1, arg2)
-	ret0, _ := ret[0].([]dtos.AuthorCommitCount)
+	ret0, _ := ret[0].([]domain.AuthorCommitCount)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

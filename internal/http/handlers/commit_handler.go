@@ -5,9 +5,10 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/kenmobility/git-api-service/common/message"
-	"github.com/kenmobility/git-api-service/common/response"
+	"github.com/kenmobility/git-api-service/internal/http/dtos"
 	"github.com/kenmobility/git-api-service/internal/usecases"
+	"github.com/kenmobility/git-api-service/pkg/message"
+	"github.com/kenmobility/git-api-service/pkg/response"
 )
 
 type CommitHandlers struct {
@@ -30,7 +31,7 @@ func (ch CommitHandlers) GetCommitsByRepositoryId(ctx *gin.Context) {
 		return
 	}
 
-	repoName, resp, err := ch.manageGitCommitUsecase.GetAllCommitsByRepository(ctx, repositoryId, query)
+	repoName, commits, pagingInfo, err := ch.manageGitCommitUsecase.GetAllCommitsByRepository(ctx, repositoryId, dtos.PagingDataFromPagingDto(query))
 	if err != nil {
 		if err == message.ErrNoRecordFound {
 			response.Failure(ctx, http.StatusBadRequest, message.ErrInvalidRepositoryId.Error(), message.ErrInvalidRepositoryId.Error())
@@ -40,15 +41,20 @@ func (ch CommitHandlers) GetCommitsByRepositoryId(ctx *gin.Context) {
 		return
 	}
 
-	if len(resp.Commits) == 0 {
+	if len(commits) == 0 {
 		msg := fmt.Sprintf("No commits fetched yet for %s repository...", *repoName)
-		response.Success(ctx, http.StatusOK, msg, resp)
+		response.Success(ctx, http.StatusOK, msg, commits)
 		return
+	}
+
+	commitsResp := dtos.AllCommitResponse{
+		Commits:  dtos.CommitsResponse(commits),
+		PageInfo: dtos.PagingInfoResponse(*pagingInfo),
 	}
 
 	msg := fmt.Sprintf("%s repository commits fetched successfully", *repoName)
 
-	response.Success(ctx, http.StatusOK, msg, resp)
+	response.Success(ctx, http.StatusOK, msg, commitsResp)
 }
 
 func (ch CommitHandlers) GetTopCommitAuthors(ctx *gin.Context) {
@@ -75,5 +81,5 @@ func (ch CommitHandlers) GetTopCommitAuthors(ctx *gin.Context) {
 
 	msg := fmt.Sprintf("%v top commit authors of %s repository fetched successfully", len(authors), *repoName)
 
-	response.Success(ctx, http.StatusOK, msg, authors)
+	response.Success(ctx, http.StatusOK, msg, dtos.AllAuthorCommitCountResponse(authors))
 }

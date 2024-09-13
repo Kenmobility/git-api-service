@@ -6,5 +6,5 @@ import (
 
 type Database interface {
 	ConnectDb() (*gorm.DB, error)
-	Migrate(db *gorm.DB) error
+	Migrate() error
 }

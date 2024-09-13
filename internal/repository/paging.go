@@ -1,6 +1,8 @@
 package repository
 
-import "github.com/kenmobility/git-api-service/internal/http/dtos"
+import (
+	"github.com/kenmobility/git-api-service/internal/domain"
+)
 
 const (
 	DEFAULTPAGE                  = 1
@@ -9,7 +11,7 @@ const (
 	PageDefaultSortDirectionDesc = "desc"
 )
 
-func getPaginationInfo(query dtos.APIPagingDto) (dtos.APIPagingDto, int) {
+func GetQueryPaginationData(query domain.APIPagingData) (domain.APIPagingData, int) {
 	var offset int
 	// load defaults
 	if query.Page == 0 {
@@ -33,7 +35,7 @@ func getPaginationInfo(query dtos.APIPagingDto) (dtos.APIPagingDto, int) {
 	return query, offset
 }
 
-func getPagingInfo(query dtos.APIPagingDto, count int) dtos.PagingInfo {
+func PagingInfo(query domain.APIPagingData, count int) domain.PagingInfo {
 	var hasNextPage bool
 
 	next := int64((query.Page * query.Limit) - count)
@@ -41,7 +43,7 @@ func getPagingInfo(query dtos.APIPagingDto, count int) dtos.PagingInfo {
 		hasNextPage = true
 	}
 
-	pagingInfo := dtos.PagingInfo{
+	pagingInfo := domain.PagingInfo{
 		TotalCount:  int64(count),
 		HasNextPage: hasNextPage,
 		Page:        int(query.Page),
