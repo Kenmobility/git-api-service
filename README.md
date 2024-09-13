@@ -51,10 +51,10 @@ curl -L \
   -X GET http://localhost:8080/repositories \
 ```
 
-- GET Request to fetch all the commits fetched from github API for any repo using repository Id 
+- GET Request to fetch all the commits fetched from github API for any repository using repository Id, response is paginated, pass 'limit' and 'page' as query params to get next pages.
 ```
 curl \
-  -X GET http://localhost:8080/repos/5846c0f0-81f5-45e3-9d4a-cfc6fe4f176a/commits \
+  -X GET http://localhost:8080/repos/5846c0f0-81f5-45e3-9d4a-cfc6fe4f176a/commits?limit=20&page=1 \
 ```
 
 - GET Request to get repository metadata using repository id. 
