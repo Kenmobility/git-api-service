@@ -3,9 +3,9 @@ package postgres
 import (
 	"context"
 
-	"github.com/kenmobility/git-api-service/common/message"
 	"github.com/kenmobility/git-api-service/internal/domain"
 	"github.com/kenmobility/git-api-service/internal/repository"
+	"github.com/kenmobility/git-api-service/pkg/message"
 	"github.com/rs/zerolog/log"
 	"gorm.io/gorm"
 )

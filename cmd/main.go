@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/kenmobility/git-api-service/common/message"
 	"github.com/kenmobility/git-api-service/infra/config"
 	"github.com/kenmobility/git-api-service/infra/database"
 	"github.com/kenmobility/git-api-service/infra/git"
@@ -19,6 +18,7 @@ import (
 	"github.com/kenmobility/git-api-service/internal/http/routes"
 	"github.com/kenmobility/git-api-service/internal/repository/postgres"
 	"github.com/kenmobility/git-api-service/internal/usecases"
+	"github.com/kenmobility/git-api-service/pkg/message"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )

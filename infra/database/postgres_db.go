@@ -3,9 +3,9 @@ package database
 import (
 	"fmt"
 
-	"github.com/kenmobility/git-api-service/common/helpers"
 	"github.com/kenmobility/git-api-service/infra/config"
 	postgreSQL "github.com/kenmobility/git-api-service/internal/repository/postgres"
+	"github.com/kenmobility/git-api-service/pkg/helpers"
 	"github.com/rs/zerolog/log"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"

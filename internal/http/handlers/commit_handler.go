@@ -5,11 +5,11 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/kenmobility/git-api-service/common/message"
-	"github.com/kenmobility/git-api-service/common/response"
 	"github.com/kenmobility/git-api-service/internal/domain"
 	"github.com/kenmobility/git-api-service/internal/http/dtos"
 	"github.com/kenmobility/git-api-service/internal/usecases"
+	"github.com/kenmobility/git-api-service/pkg/message"
+	"github.com/kenmobility/git-api-service/pkg/response"
 )
 
 type CommitHandlers struct {

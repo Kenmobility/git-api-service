@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/joho/godotenv"
-	"github.com/kenmobility/git-api-service/common/helpers"
+	"github.com/kenmobility/git-api-service/pkg/helpers"
 	"github.com/rs/zerolog/log"
 	"gopkg.in/go-playground/validator.v9"
 )

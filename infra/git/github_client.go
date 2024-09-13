@@ -10,9 +10,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kenmobility/git-api-service/common/client"
-	"github.com/kenmobility/git-api-service/common/message"
 	"github.com/kenmobility/git-api-service/internal/domain"
+	"github.com/kenmobility/git-api-service/pkg/client"
+	"github.com/kenmobility/git-api-service/pkg/message"
 	"github.com/rs/zerolog/log"
 )
 

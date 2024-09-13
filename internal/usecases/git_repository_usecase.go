@@ -5,13 +5,13 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/kenmobility/git-api-service/common/helpers"
-	"github.com/kenmobility/git-api-service/common/message"
 	"github.com/kenmobility/git-api-service/infra/config"
 	"github.com/kenmobility/git-api-service/infra/git"
 	"github.com/kenmobility/git-api-service/internal/domain"
 	"github.com/kenmobility/git-api-service/internal/http/dtos"
 	"github.com/kenmobility/git-api-service/internal/repository"
+	"github.com/kenmobility/git-api-service/pkg/helpers"
+	"github.com/kenmobility/git-api-service/pkg/message"
 	"github.com/rs/zerolog/log"
 )
 

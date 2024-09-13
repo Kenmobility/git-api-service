@@ -6,9 +6,9 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/kenmobility/git-api-service/common/helpers"
 	"github.com/kenmobility/git-api-service/internal/domain"
 	"github.com/kenmobility/git-api-service/mocks"
+	"github.com/kenmobility/git-api-service/pkg/helpers"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 )
