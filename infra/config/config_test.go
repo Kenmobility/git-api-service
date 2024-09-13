@@ -1,10 +1,11 @@
-package config
+package config_test
 
 import (
 	"os"
 	"testing"
 	"time"
 
+	"github.com/kenmobility/git-api-service/infra/config"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -49,7 +50,7 @@ func TestLoadConfigValid(t *testing.T) {
 	})
 
 	// Load the config
-	cfg, err := LoadConfig("")
+	cfg, err := config.LoadConfig("")
 	assert.NoError(t, err)
 	assert.NotNil(t, cfg)
 
@@ -87,7 +88,7 @@ func TestLoadConfigInvalid(t *testing.T) {
 	defer clearEnv([]string{"APP_ENV", "FETCH_INTERVAL", "DEFAULT_START_DATE", "GIT_COMMIT_FETCH_PER_PAGE"})
 
 	// Attempt to load the config, expecting errors
-	cfg, err := LoadConfig("")
+	cfg, err := config.LoadConfig("")
 	assert.Error(t, err)
 	assert.Nil(t, cfg)
 }
@@ -103,7 +104,7 @@ func TestLoadConfigMissingEnvVars(t *testing.T) {
 	defer clearEnv([]string{"APP_ENV", "DATABASE_PORT", "FETCH_INTERVAL"})
 
 	// Attempt to load the config, expecting validation error
-	cfg, err := LoadConfig("")
+	cfg, err := config.LoadConfig("")
 	assert.Error(t, err)
 	assert.Nil(t, cfg)
 }
@@ -122,7 +123,7 @@ func TestLoadConfigDefaultValues(t *testing.T) {
 	defer clearEnv([]string{"APP_ENV", "DATABASE_HOST", "DATABASE_PORT", "DATABASE_USER", "DATABASE_PASSWORD", "DATABASE_NAME"})
 
 	// Load config with missing optional env vars
-	cfg, err := LoadConfig("")
+	cfg, err := config.LoadConfig("")
 	assert.NoError(t, err)
 	assert.NotNil(t, cfg)
 

@@ -1,10 +1,13 @@
-package test
+package repository_test
 
 import (
 	"context"
 	"testing"
 
-	"github.com/kenmobility/git-api-service/mocks"
+	"github.com/google/uuid"
+	"github.com/kenmobility/git-api-service/internal/domain"
+	repo_mocks "github.com/kenmobility/git-api-service/internal/repository/mocks"
+	"github.com/kenmobility/git-api-service/pkg/helpers"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 )
@@ -12,7 +15,7 @@ import (
 func TestGetRepoMetadataRepo(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
-	store := mocks.NewMockStore(ctrl)
+	store := repo_mocks.NewMockRepository(ctrl)
 
 	// Define test data
 	repoMetadata := randomRepoMetadata()
@@ -33,7 +36,7 @@ func TestGetRepoMetadataRepo(t *testing.T) {
 func TestUpdateRepoMetadataRepo(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
-	store := mocks.NewMockStore(ctrl)
+	store := repo_mocks.NewMockRepository(ctrl)
 
 	// Define test data
 	repoMetadata := randomRepoMetadata()
@@ -55,7 +58,7 @@ func TestUpdateRepoMetadataRepo(t *testing.T) {
 func TestSaveRepoMetadataRepo(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
-	store := mocks.NewMockStore(ctrl)
+	store := repo_mocks.NewMockRepository(ctrl)
 
 	repoMetadata := randomRepoMetadata()
 
@@ -67,4 +70,14 @@ func TestSaveRepoMetadataRepo(t *testing.T) {
 	_, err := store.SaveRepoMetadata(context.Background(), repoMetadata)
 
 	require.NoError(t, err)
+}
+
+func randomRepoMetadata() domain.RepoMetadata {
+	return domain.RepoMetadata{
+		PublicID:   uuid.New().String(),
+		Name:       helpers.RandomRepositoryName(),
+		URL:        helpers.RandomRepositoryUrl(),
+		Language:   "C++",
+		IsFetching: true,
+	}
 }

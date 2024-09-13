@@ -1,11 +1,11 @@
-package test
+package repository_test
 
 import (
 	"context"
 	"testing"
 
 	"github.com/kenmobility/git-api-service/internal/domain"
-	"github.com/kenmobility/git-api-service/mocks"
+	repo_mocks "github.com/kenmobility/git-api-service/internal/repository/mocks"
 	"github.com/kenmobility/git-api-service/pkg/helpers"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -14,7 +14,7 @@ import (
 func TestSaveCommitRepo(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
-	store := mocks.NewMockStore(ctrl)
+	store := repo_mocks.NewMockRepository(ctrl)
 
 	commitData := randomCommitdata()
 

@@ -32,10 +32,10 @@ clean:
 test:
 	go test -v ./...
 
-mockstore:
-	mockgen -package mocks -destination mocks/store.go github.com/kenmobility/git-api-service/test Store
+mockrepo:
+	mockgen -package repo_mocks -destination internal/repository/mocks/mock_repository.go github.com/kenmobility/git-api-service/internal/repository Repository
 
 mockgit:
-	mockgen -package mocks -destination mocks/mock_git_manager_client.go github.com/kenmobility/git-api-service/infra/git GitManagerClient
+	mockgen -package git_mocks -destination infra/git/mocks/mock_git_manager_client.go github.com/kenmobility/git-api-service/infra/git GitManagerClient
 
-.PHONY: all copy-env up down restart clean test mockstore mockgit
+.PHONY: all copy-env up down restart clean test mockrepo mockgit

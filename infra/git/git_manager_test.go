@@ -1,4 +1,4 @@
-package test
+package git_test
 
 import (
 	"context"
@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	git_mocks "github.com/kenmobility/git-api-service/infra/git/mocks"
 	"github.com/kenmobility/git-api-service/internal/domain"
-	"github.com/kenmobility/git-api-service/mocks"
 	"github.com/kenmobility/git-api-service/pkg/helpers"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -17,7 +17,7 @@ func TestFetchRepoMetadata(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockGitClient := mocks.NewMockGitManagerClient(ctrl)
+	mockGitClient := git_mocks.NewMockGitManagerClient(ctrl)
 
 	// Define test data
 	repoName := "sample/repo"
@@ -45,7 +45,7 @@ func TestFetchCommits(t *testing.T) {
 	defer ctrl.Finish()
 
 	// Create a mock for the GitManagerClient
-	mockGitClient := mocks.NewMockGitManagerClient(ctrl)
+	mockGitClient := git_mocks.NewMockGitManagerClient(ctrl)
 
 	// Define test data
 	repoMetadata := randomRepoMetadata()
