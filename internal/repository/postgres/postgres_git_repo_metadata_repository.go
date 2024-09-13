@@ -1,10 +1,11 @@
-package repository
+package postgres
 
 import (
 	"context"
 
 	"github.com/kenmobility/git-api-service/common/message"
 	"github.com/kenmobility/git-api-service/internal/domain"
+	"github.com/kenmobility/git-api-service/internal/repository"
 	"github.com/rs/zerolog/log"
 	"gorm.io/gorm"
 )
@@ -13,7 +14,7 @@ type PostgresGitRepoMetadataRepository struct {
 	DB *gorm.DB
 }
 
-func NewPostgresGitRepoMetadataRepository(db *gorm.DB) RepoMetadataRepository {
+func NewPostgresGitRepoMetadataRepository(db *gorm.DB) repository.RepoMetadataRepository {
 	return &PostgresGitRepoMetadataRepository{DB: db}
 }
 

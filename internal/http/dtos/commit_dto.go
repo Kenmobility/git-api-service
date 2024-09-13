@@ -21,7 +21,7 @@ type CommitResponseDto struct {
 }
 
 // AuthorCommitCount holds the result with author and count of commits
-type AuthorCommitCount struct {
+type AuthorCommitCountDto struct {
 	Author      string `json:"author"`
 	CommitCount int    `json:"commit_count"`
 }

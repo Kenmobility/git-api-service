@@ -5,7 +5,7 @@ import (
 
 	"github.com/kenmobility/git-api-service/common/helpers"
 	"github.com/kenmobility/git-api-service/infra/config"
-	"github.com/kenmobility/git-api-service/internal/repository"
+	postgreSQL "github.com/kenmobility/git-api-service/internal/repository/postgres"
 	"github.com/rs/zerolog/log"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -32,7 +32,7 @@ func NewPostgresDatabase(config config.Config) Database {
 	return &PostgresDatabase{DSN: conString}
 }
 
-// ConnectDb establishes a database connection or error if not successful
+// ConnectDb establishes a postgreSQL database connection or error if not successful
 func (p *PostgresDatabase) ConnectDb() (*gorm.DB, error) {
 	db, err := gorm.Open(postgres.Open(p.DSN), &gorm.Config{
 		//Logger: logger.Default.LogMode(logger.Info),
@@ -48,5 +48,5 @@ func (p *PostgresDatabase) ConnectDb() (*gorm.DB, error) {
 // Migrate does db schema migration for PostgreSQL
 func (p *PostgresDatabase) Migrate(db *gorm.DB) error {
 	// Migrate the schema for PostgreSQL
-	return db.AutoMigrate(&repository.Repository{}, &repository.Commit{})
+	return db.AutoMigrate(&postgreSQL.Repository{}, &postgreSQL.Commit{})
 }

@@ -3,13 +3,14 @@ package usecases
 import (
 	"context"
 
-	"github.com/kenmobility/git-api-service/internal/http/dtos"
+	"github.com/kenmobility/git-api-service/internal/domain"
+	//"github.com/kenmobility/git-api-service/internal/http/dtos"
 	"github.com/kenmobility/git-api-service/internal/repository"
 )
 
 type ManageGitCommitUsecase interface {
-	GetAllCommitsByRepository(ctx context.Context, repoId string, query dtos.APIPagingDto) (*string, *dtos.AllCommitsResponse, error)
-	GetTopRepositoryCommitAuthors(ctx context.Context, repoId string, limit int) (*string, []dtos.AuthorCommitCount, error)
+	GetAllCommitsByRepository(ctx context.Context, repoId string, query domain.APIPaging) (*string, []domain.Commit, *domain.PagingInfo, error)
+	GetTopRepositoryCommitAuthors(ctx context.Context, repoId string, limit int) (*string, []domain.AuthorCommitCount, error)
 }
 
 type manageGitCommitUsecase struct {
@@ -24,21 +25,21 @@ func NewManageGitCommitUsecase(commitRepo repository.CommitRepository, repoMetad
 	}
 }
 
-func (uc *manageGitCommitUsecase) GetAllCommitsByRepository(ctx context.Context, repoId string, query dtos.APIPagingDto) (*string, *dtos.AllCommitsResponse, error) {
+func (uc *manageGitCommitUsecase) GetAllCommitsByRepository(ctx context.Context, repoId string, query domain.APIPaging) (*string, []domain.Commit, *domain.PagingInfo, error) {
 	repoMetaData, err := uc.repoMetadataRepository.RepoMetadataByPublicId(ctx, repoId)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
-	commitsResp, err := uc.commitRepository.AllCommitsByRepository(ctx, *repoMetaData, query)
+	commits, pagingInfo, err := uc.commitRepository.AllCommitsByRepository(ctx, *repoMetaData, query)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
-	return &repoMetaData.Name, commitsResp, nil
+	return &repoMetaData.Name, commits, pagingInfo, nil
 }
 
-func (uc *manageGitCommitUsecase) GetTopRepositoryCommitAuthors(ctx context.Context, repoId string, limit int) (*string, []dtos.AuthorCommitCount, error) {
+func (uc *manageGitCommitUsecase) GetTopRepositoryCommitAuthors(ctx context.Context, repoId string, limit int) (*string, []domain.AuthorCommitCount, error) {
 	repoMetaData, err := uc.repoMetadataRepository.RepoMetadataByPublicId(ctx, repoId)
 	if err != nil {
 		return nil, nil, err

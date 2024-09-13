@@ -17,7 +17,7 @@ import (
 	"github.com/kenmobility/git-api-service/internal/http/dtos"
 	"github.com/kenmobility/git-api-service/internal/http/handlers"
 	"github.com/kenmobility/git-api-service/internal/http/routes"
-	"github.com/kenmobility/git-api-service/internal/repository"
+	"github.com/kenmobility/git-api-service/internal/repository/postgres"
 	"github.com/kenmobility/git-api-service/internal/usecases"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -50,8 +50,8 @@ func main() {
 	}
 
 	// Initialize various layers
-	commitRepository := repository.NewPostgresGitCommitRepository(db)
-	repoMetadataRepository := repository.NewPostgresGitRepoMetadataRepository(db)
+	commitRepository := postgres.NewPostgresGitCommitRepository(db)
+	repoMetadataRepository := postgres.NewPostgresGitRepoMetadataRepository(db)
 
 	gitClient := git.NewGitHubClient(config.GitHubApiBaseURL, config.GitHubToken, config.FetchInterval)
 

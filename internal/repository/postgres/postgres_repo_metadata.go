@@ -1,4 +1,4 @@
-package repository
+package postgres
 
 import (
 	"time"
@@ -25,7 +25,7 @@ type Repository struct {
 	LastFetchedPage   int32 `gorm:"default:1"`
 }
 
-// ToDomain converts a PostgresRepository to a generic domain entity RepoMetadata.
+// ToDomain converts a Postgres Repository object to domain entity RepoMetadata.
 func (pr *Repository) ToDomain() *domain.RepoMetadata {
 	return &domain.RepoMetadata{
 		PublicID:          pr.PublicID,
@@ -45,7 +45,7 @@ func (pr *Repository) ToDomain() *domain.RepoMetadata {
 	}
 }
 
-// FromDomain creates a PostgresRepository from a generic domain entity RepoMetadata.
+// FromDomainRepo returns a Postgres Repository object from domain entity RepoMetadata.
 func FromDomainRepo(r *domain.RepoMetadata) *Repository {
 	return &Repository{
 		PublicID:          r.PublicID,
