@@ -17,7 +17,7 @@ import (
 type GitRepositoryUsecase interface {
 	StartIndexing(ctx context.Context, repositoryName string) (*domain.RepoMetadata, error)
 	GetById(ctx context.Context, repoId string) (*domain.RepoMetadata, error)
-	GellAll(ctx context.Context) ([]domain.RepoMetadata, error)
+	GetAll(ctx context.Context) ([]domain.RepoMetadata, error)
 	ResumeFetching(ctx context.Context) error
 	UpdateFetchingStatusForAllRepositories(ctx context.Context, status bool) error
 }
@@ -48,7 +48,7 @@ func (uc *gitRepoUsecase) GetById(ctx context.Context, repoId string) (*domain.R
 	return repo, nil
 }
 
-func (uc *gitRepoUsecase) GellAll(ctx context.Context) ([]domain.RepoMetadata, error) {
+func (uc *gitRepoUsecase) GetAll(ctx context.Context) ([]domain.RepoMetadata, error) {
 	repos, err := uc.repoMetadataRepository.AllRepoMetadata(ctx)
 	if err != nil {
 		return nil, err

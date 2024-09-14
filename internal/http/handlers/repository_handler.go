@@ -56,7 +56,7 @@ func (rh RepositoryHandlers) AddRepository(ctx *gin.Context) {
 }
 
 func (rh RepositoryHandlers) FetchAllRepositories(ctx *gin.Context) {
-	repos, err := rh.gitRepositoryUsecase.GellAll(ctx)
+	repos, err := rh.gitRepositoryUsecase.GetAll(ctx)
 	if err != nil {
 		response.Failure(ctx, http.StatusInternalServerError, err.Error(), err)
 		return
