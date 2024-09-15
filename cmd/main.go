@@ -90,7 +90,7 @@ func main() {
 			case <-ctx.Done():
 				log.Warn().Msg("Program is shutting down...")
 				// Call method to set isFetching to false in DB
-				if err := gitRepositoryUsecase.UpdateFetchingStatusForAllRepositories(context.Background(), false); err != nil {
+				if err := repoMetadataRepository.UpdateFetchingStateForAllRepos(context.Background(), false); err != nil {
 					log.Err(err).Msgf("Error updating isFetching to false: %v", err)
 				}
 				os.Exit(0)

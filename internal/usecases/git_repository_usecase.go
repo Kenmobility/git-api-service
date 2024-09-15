@@ -19,7 +19,6 @@ type GitRepositoryUsecase interface {
 	GetById(ctx context.Context, repoId string) (*domain.RepoMetadata, error)
 	GetAll(ctx context.Context) ([]domain.RepoMetadata, error)
 	ResumeFetching(ctx context.Context) error
-	UpdateFetchingStatusForAllRepositories(ctx context.Context, status bool) error
 }
 
 type gitRepoUsecase struct {
@@ -237,8 +236,4 @@ func (uc *gitRepoUsecase) fetchAndReconcileCommits(ctx context.Context, repo dom
 			until = time.Now()
 		}
 	}
-}
-
-func (uc *gitRepoUsecase) UpdateFetchingStatusForAllRepositories(ctx context.Context, status bool) error {
-	return uc.repoMetadataRepository.UpdateFetchingStateForAllRepos(ctx, status)
 }
