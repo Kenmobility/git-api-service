@@ -62,10 +62,12 @@ func (g *GitHubClient) FetchRepoMetadata(ctx context.Context, repositoryName str
 	}
 
 	if resp.StatusCode == http.StatusForbidden {
+		log.Error().Msgf("failed to fetch repository meta data; status code: %v, body: %v", resp.StatusCode, resp.Body)
 		return nil, message.ErrRateLimitExceeded
 	}
 
 	if resp.StatusCode != http.StatusOK {
+		log.Error().Msgf("failed to fetch repository meta data; status code: %v, body: %v", resp.StatusCode, resp.Body)
 		return nil, message.ErrRepoMetaDataNotFetched
 	}
 
@@ -107,6 +109,7 @@ func (g *GitHubClient) FetchCommits(ctx context.Context, repo domain.RepoMetadat
 	}
 
 	if response.StatusCode == http.StatusForbidden {
+		log.Error().Msgf("failed to fetch repository meta data; status code: %v, body: %v", response.StatusCode, response.Body)
 		return nil, false, message.ErrRateLimitExceeded
 	}
 
@@ -119,13 +122,14 @@ func (g *GitHubClient) FetchCommits(ctx context.Context, repo domain.RepoMetadat
 	}
 
 	if response.StatusCode != http.StatusOK {
-		return nil, false, fmt.Errorf("failed to fetch commits; status code: %v", response.StatusCode)
+		log.Error().Msgf("failed to fetch commits; status code: %v, body: %v", response.StatusCode, response.Body)
+		return nil, false, fmt.Errorf("failed to fetch commits; status code: %v, body: %v", response.StatusCode, response.Body)
 	}
 
 	var commitRes []GithubCommitResponse
 
 	if err := json.Unmarshal([]byte(response.Body), &commitRes); err != nil {
-		log.Info().Msgf("marshal error, [%v]", err)
+		log.Err(err).Msgf("marshal error, [%v]", err)
 		return nil, false, errors.New("could not unmarshal commits response")
 	}
 
