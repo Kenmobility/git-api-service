@@ -102,7 +102,7 @@ func (gc *PostgresGitCommitRepository) TopCommitAuthorsByRepository(ctx context.
 
 func domainCommits(dbCommits []Commit) []domain.Commit {
 	if len(dbCommits) == 0 {
-		return nil
+		return []domain.Commit{}
 	}
 
 	domainCommits := make([]domain.Commit, 0, len(dbCommits))
