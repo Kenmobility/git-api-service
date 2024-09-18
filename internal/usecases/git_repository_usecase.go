@@ -48,14 +48,7 @@ func (uc *gitRepoUsecase) GetById(ctx context.Context, repoId string) (*domain.R
 }
 
 func (uc *gitRepoUsecase) GetAll(ctx context.Context) ([]domain.RepoMetadata, error) {
-	repos, err := uc.repoMetadataRepository.AllRepoMetadata(ctx)
-	if err != nil {
-		return nil, err
-	}
-	repoDtoResponse := make([]domain.RepoMetadata, 0, len(repos))
-	repoDtoResponse = append(repoDtoResponse, repos...)
-
-	return repoDtoResponse, nil
+	return uc.repoMetadataRepository.AllRepoMetadata(ctx)
 }
 
 func (uc *gitRepoUsecase) StartIndexing(ctx context.Context, repositoryName string) (*domain.RepoMetadata, error) {
